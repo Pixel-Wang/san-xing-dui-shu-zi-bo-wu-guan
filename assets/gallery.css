@@ -1,0 +1,133 @@
+/* 四个展区共用的导览层。展品、档案及观察工具各自保留原有布局。 */
+body[data-layout] .topbar {
+  background:linear-gradient(110deg,#101f20,#0b1719 56%,#112321);
+  border-bottom:1px solid #91805a61;
+}
+body[data-layout] .brand-name {color:#eadcc0;font-weight:600;text-shadow:none}
+body[data-layout] .brand-en {font-family:Georgia,serif;color:#bdaf90}
+body[data-layout] .topnav button {
+  position:relative; background:transparent; border:0; border-radius:0;
+  color:#c0c5b9; font-weight:400; box-shadow:none;
+}
+body[data-layout] .topnav button.active {color:#f2dfb3;background:transparent;border:0;box-shadow:none}
+.topnav button::after {
+  content:"";position:absolute;inset:auto 18% 0;height:2px;
+  background:#c3ab77;transform:scaleX(0);transition:transform .18s ease;
+}
+.topnav button.active::after,.topnav button:hover::after {transform:scaleX(1)}
+body[data-layout] .bottomnav {border-radius:5px;background:#0b1b1bee;border-color:#80745575}
+body[data-layout] .bottomnav button {border-radius:2px;color:#c7c7b6}
+body[data-layout] .bottomnav button.active {
+  color:#f3dfb4;background:#304039;box-shadow:inset 0 -2px #bfa572;
+}
+body[data-layout] :is(button,select,a,summary):focus-visible {
+  outline:2px solid #e5be77;outline-offset:2px;
+}
+.search-box:focus-within {outline:2px solid #c6aa72;outline-offset:1px}
+@media(min-width:961px) {
+  body[data-layout] .topbar {
+    height:72px;flex:none;display:grid;grid-template-columns:1fr auto 1fr;
+    gap:14px;padding:0 clamp(16px,2vw,36px);
+  }
+  body[data-layout] .topnav {margin:0;gap:clamp(0px,.6vw,10px)}
+  body[data-layout] .topnav button {font-size:16px;padding:12px clamp(10px,1.25vw,22px)}
+  body[data-layout] .top-tools {justify-self:end;margin:0}
+  body[data-layout] .brand-mark {width:40px;height:40px}
+  body[data-layout] .brand-name {font-size:clamp(17px,1.55vw,23px)}
+}
+/* 探索：选中展品的侧标和资料卡均采用窄铜线。 */
+body.page-explore .relic-item {
+  border-radius:3px;background:linear-gradient(90deg,#102220ed,#0a1719cf);
+}
+body.page-explore .relic-item.selected {
+  border-color:#ac997275;background:linear-gradient(100deg,#304039,#152827);
+  box-shadow:inset 3px 0 #c7ab74;
+}
+body.page-explore .relic-item.selected .thumb {box-shadow:none}
+body.page-explore .relic-item:hover {border-color:#c0ae88}
+body.page-explore .info-panel {
+  border-radius:3px;border-color:#897b585c;border-top:2px solid #ae9766;
+  background:linear-gradient(155deg,#192c29f7,#0b1a1cfa 70%);
+}
+body.page-explore .info-panel .corner {width:35px;height:35px;opacity:.35}
+body.page-explore .info-panel h1 {color:#f0e6cc;letter-spacing:.08em}
+body.page-explore .info-sub {color:#b7bfaf;font-size:13px}
+body.page-explore .spec {grid-template-columns:max-content 1fr;column-gap:15px;margin:17px 0}
+body.page-explore .spec dt {letter-spacing:.04em}
+body.page-explore .spec dd {text-align:right;color:#d6d9ca}
+body.page-explore .home-info-copy p {font-size:14px;line-height:1.85;color:#c5cfc4;text-align:start}
+body.page-explore .home-info-copy small {color:#b4bcab;font-size:11px}
+body.page-explore .explore-btn {
+  width:100%;border:1px solid #c8b087;color:#172823;background:#d5c09a;
+  font-weight:600;letter-spacing:.1em;border-radius:2px;
+}
+body.page-explore .src-link {font-size:12px;color:#b5bdaf}
+body.page-explore .viewer-tools {
+  gap:2px;padding:3px;background:#091c1de6;border:1px solid #a3916c68;border-radius:5px;
+}
+body.page-explore .vtool {
+  border-radius:2px;border:0;background:transparent;box-shadow:none;color:#d4c7aa;
+}
+body.page-explore .vtool:is(.on,:hover) {background:#35463c;color:#ffe4ab;box-shadow:none}
+
+/* 沉浸展览的背景仍用原图。点云上场时，只在模型身后的墙面局部收光。 */
+body[data-hall="entity"] .viewer::before {
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 49% 78% at 69% 52%,#001212ec 6%,#021411cc 47%,transparent 92%);
+  opacity:0;transition:opacity .65s ease;
+}
+body[data-hall="entity"] .viewer:has(#hallCloud[aria-pressed="true"])::before {opacity:1}
+body[data-hall="entity"] .hall-label {left:10%;width:33%;top:12%}
+.hall-index {font:italic clamp(32px,3.6vw,62px)/1 Georgia,serif;color:#c1aa7e}
+.hall-index small {font:normal 13px/1 Georgia,serif;letter-spacing:.13em}
+.hall-label h1 {font-weight:500;color:#f0e4c9;letter-spacing:.09em;margin:2.8vh 0 1vh}
+.hall-en {color:#c8b58e;font-size:clamp(12px,1vw,18px);letter-spacing:.22em}
+.hall-label p {color:#d2d6c8;font-size:clamp(15px,1.22vw,22px);line-height:1.9;max-width:27em}
+.hall-label p::before {width:36px;height:1px;background:#b7a073;margin:3.4vh 0 2.6vh}
+.hall-modes {gap:0;padding:3px;border:1px solid #9b896765;background:#071a19cb;border-radius:4px}
+.hall-modes button {border:0;border-radius:2px;font-size:clamp(14px,1.14vw,21px);min-height:40px}
+.hall-modes [aria-pressed="true"] {background:#d8c29b;color:#1a2821}
+.hall-modes [aria-pressed="false"]:enabled {background:transparent;color:#d8c9a8}
+body[data-hall="entity"] .hall-paging {left:10%;width:31%;bottom:9%;font-size:clamp(15px,1.18vw,21px)}
+@media(max-height:690px) {
+  body[data-hall="entity"] .hall-label {top:4%}
+  .hall-label h1 {margin-top:1.2vh}
+  .hall-label p::before {margin:1.8vh 0}
+  .hall-modes {margin-top:2.4vh}
+  body[data-hall="entity"] .hall-paging {bottom:3%}
+}
+body.page-interactive3d:not([data-history-desk]) {
+  background:#0c2321 url("backgrounds/interactive.png") center/cover fixed no-repeat;
+}
+body.page-interactive3d .bg-pattern {display:none}
+body.mode-experience #tracePanel {background:linear-gradient(120deg,#122a27fa,#0d231ff5);border-top:2px solid #a89267}
+body[data-layout="immersive"]:not([data-hall="entity"]) .viewer {
+  background:linear-gradient(0deg,#03161591,transparent 65%),url("backgrounds/immersive.png") 68% center/cover;
+}
+body[data-layout="immersive"]:not([data-hall="entity"]) {background:#0b1c1c}
+body[data-layout="immersive"] .bg-pattern {display:none}
+body[data-layout] .topnav button {-webkit-tap-highlight-color:rgba(191,165,114,.18)}
+@media(max-width:960px) {
+  .page-interactive3d .explore-btn {
+    background:#d5c09a;color:#172823;border-radius:2px;box-shadow:none;
+  }
+  .page-immersive .vtool.on {
+    color:#f1dbab;background:#34463c;border-color:#b5a177;box-shadow:none;
+  }
+}
+@media(max-width:480px) {
+  body[data-layout] .topbar {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:9px 12px 5px}
+  body[data-layout] .topnav {grid-column:1/-1;grid-row:2}
+  body[data-layout] .brand {gap:5px}
+  body[data-layout] .brand-mark {width:25px;height:25px}
+  body[data-layout] .brand-name {font-size:clamp(13px,3.6vw,16px);letter-spacing:.04em}
+  body[data-layout] .brand-en {font-size:7px;letter-spacing:.04em}
+  body[data-layout] .top-tools {gap:4px}
+  body[data-layout] .tool-btn {width:34px;height:34px;min-height:34px}
+  body[data-layout] .search-box {gap:3px;padding:0 6px}
+  body[data-layout] .search-box input {width:52px}
+  body.page-explore .viewer-tools {left:0}
+}
+@media(prefers-reduced-motion:reduce) {
+  .topnav button::after,body[data-hall="entity"] .viewer::before {transition:none}
+}

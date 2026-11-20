@@ -1,0 +1,52 @@
+body[data-layout="culture"] {
+  background: #102824 url("backgrounds/culture.png") center / cover fixed no-repeat;
+}
+.page-culture .bg-pattern, body[data-layout="culture"] .info-panel { display:none }
+.page-culture .topbar {position:relative; z-index:2}
+.page-culture .top-tools {position:relative}
+body[data-layout="culture"] main {grid-template-columns:minmax(0,1fr); grid-template-areas:"panel"; padding:0}
+body[data-layout="culture"] :is(.relic-panel,footer) {display:none}
+#culturePanel {border:0; border-radius:0; padding:0; box-shadow:none; background:transparent; overflow:auto; scrollbar-color:#6d7054 #0c211d}
+.folio {width:min(1120px,88%); margin:auto; color:#ede6d4; padding:34px 0 48px}
+.folio-cover {display:grid; grid-template-columns:1.2fr 1fr; gap:8%; align-items:center; padding:12px 0 34px; border-bottom:1px solid #998557}
+.folio-intro {padding:8px 0}
+.folio-kicker,.folio-en {color:#d4bf8b; font-size:11px; line-height:1.5; letter-spacing:.19em; margin:0}
+.folio-intro .folio-kicker {font-size:14px; letter-spacing:.22em}
+.folio-kicker span {color:#a49060; margin:0 .65em}
+.folio h1 {font:500 clamp(46px,4.6vw,72px)/1.28 var(--serif); letter-spacing:.08em; margin:16px 0 4px}
+.folio-en {font-family:Georgia,serif; letter-spacing:.24em; font-size:14px}
+.folio-lead {font:17px/1.95 var(--serif); max-width:32em; margin:24px 0 18px; color:#e2dfcf}
+.folio-picker {display:inline-flex; gap:12px; align-items:center; color:#c1c4ad; font-size:12px}
+.folio-picker select {font:inherit; color:#e1d0a6; background:#102824; border:1px solid #716b4d; padding:6px 12px; border-radius:2px}
+.folio-plate {
+  justify-self:center; width:min(100%,clamp(230px,31vh,340px)); margin:0;
+  padding:8px; background:#101e1b; border:1px solid #9685609c;
+  box-shadow:5px 5px 0 -1px #142822,5px 5px #796f525c,0 14px 30px #030e0b60;
+}
+.folio-plate img {display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#091613}
+.folio-plate figcaption {border-top:1px solid #5c5844; display:flex; justify-content:space-between; padding:10px 3px 0; color:#c6c6af; font-size:11px; letter-spacing:.11em}
+.folio-spread {display:grid; grid-template-columns:1.55fr 1fr; margin-top:26px; background:#0f2523f5; border:1px solid #897d5b77}
+.folio-spread section {padding:28px clamp(20px,2.5vw,38px)}
+.folio-record {border-left:1px solid #817b5c70; background:linear-gradient(150deg,#2e3c2fbb,#182c26)}
+#culturePanel .folio-spread h2 {font:500 28px/1.45 var(--serif); color:#eee5cd; letter-spacing:.07em; margin:5px 0 22px}
+.folio ol {list-style:none; margin:0; padding:0}
+.folio li {position:relative}
+.folio li time {display:block;margin:10px 0 8px 20px}
+.folio time {color:#d6bf8a; font:26px/1.2 Georgia,serif}
+.folio li div {position:relative; padding:0 0 20px 20px; border-left:1px solid #746c4c}
+.folio li div::before {content:""; position:absolute; width:6px; height:6px; background:#c1a777; left:-3.5px; top:9px; transform:rotate(45deg)}
+.folio li:last-child div {border-color:transparent; padding-bottom:4px}
+.folio h3 {margin:0; font:600 18px/1.5 var(--serif); color:#e8dfc9}
+.folio li p,.folio-note {font-size:14px; line-height:1.85; color:#c5cabb; margin:5px 0 0}
+.folio dl {margin:0; display:grid; grid-template-columns:max-content 1fr; font-size:14px; line-height:1.7}
+.folio dt,.folio dd {border-bottom:1px solid #435146; margin:0; padding:9px 0}
+.folio dt {color:#afb7a7; padding-right:20px}
+.folio dd {text-align:right; color:#e5dcc3}
+.folio-note {margin-top:16px}
+.folio-sources {border-top:1px solid #495645; padding-top:12px; margin-top:14px; color:#bbc3af; font-size:12px; line-height:1.9}
+.folio-sources a {color:#ddc895; margin-right:.8em; text-underline-offset:3px}
+@media(max-width:960px) {
+  .folio-cover,.folio-spread {display:block}
+  .folio-plate {margin:20px auto 0}
+  .folio-record {border-left:0; border-top:1px solid #625e45}
+}

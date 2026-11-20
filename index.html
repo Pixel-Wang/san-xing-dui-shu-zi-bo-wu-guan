@@ -1,0 +1,2199 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:," />
+    <title>三星堆数字博物馆</title>
+    <!-- 第四阶段：移除 Google Fonts 网络依赖（原依赖约 4.2MB 且曾加载失败），
+         改用系统字体栈：本机装有 Noto 时优先用本机字体，否则降级到
+         苹方 / 宋体 / 微软雅黑等系统字体，零网络请求、离线可用。 -->
+    <style>
+      :root{
+        --bg:#050f0d; --bg2:#081713; --panel:rgba(10,26,22,.88); --panel-solid:#0a1a16;
+        --gold:#d4af5a; --gold-bright:#f0d48a; --gold-dim:#9a7d3c; --gold-deep:#6d5622;
+        --patina:#4d9a7e; --patina-dim:#2e5f4f;
+        --ink:#e9e2cf; --ink-dim:#a89f88; --ink-faint:#6f6a58;
+        --line:rgba(212,175,90,.28); --line-soft:rgba(212,175,90,.14);
+        --serif:"Noto Serif SC","Songti SC","STSong","STSongti-SC-Regular","SimSun","宋体",serif;
+        --sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",sans-serif;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      html{overflow-x:clip}
+      img,svg,canvas{max-width:100%}
+      body{
+        margin:0; font-family:var(--sans); color:var(--ink); overflow:hidden;
+        background:
+          radial-gradient(1100px 600px at 50% 30%, rgba(38,84,68,.35), transparent 60%),
+          radial-gradient(800px 500px at 85% 90%, rgba(212,175,90,.06), transparent 60%),
+          linear-gradient(180deg,#071511 0%, #050f0d 55%, #040c0a 100%);
+      }
+      button,[role="button"],input{min-height:2.25rem}
+      button{font-family:inherit; cursor:pointer}
+      ::selection{background:rgba(212,175,90,.35)}
+
+      /* ---------- 背景暗纹 ---------- */
+      .bg-pattern{position:fixed; inset:0; pointer-events:none; opacity:.05; z-index:0;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23d4af5a' stroke-width='2'%3E%3Cpath d='M10 10h40v18H28v14h22'/%3E%3Cpath d='M110 110H70V92h18V78H66'/%3E%3Ccircle cx='88' cy='30' r='10'/%3E%3Cpath d='M20 96h24M32 84v24'/%3E%3C/g%3E%3C/svg%3E");}
+      .bg-vignette{position:fixed; inset:0; pointer-events:none; z-index:0;
+        background:radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%)}
+
+      #app{position:relative; z-index:1; display:flex; flex-direction:column; height:100dvh}
+
+      /* ---------- 顶部栏 TopBar ---------- */
+      .topbar{display:flex; align-items:center; gap:18px; padding:10px 22px;
+        border-bottom:1px solid var(--line-soft);
+        background:linear-gradient(180deg, rgba(16,36,29,.92), rgba(8,20,16,.88)); backdrop-filter:blur(6px)}
+      .brand{display:flex; align-items:center; gap:12px; min-width:0}
+      .brand-mark{width:42px; height:42px; flex:none; color:var(--gold)}
+      .brand-name{font-family:var(--serif); font-weight:900; font-size:21px; letter-spacing:.14em;
+        color:var(--gold-bright); white-space:nowrap; text-shadow:0 0 18px rgba(212,175,90,.35)}
+      .brand-en{font-size:10px; letter-spacing:.18em; color:var(--ink-dim); white-space:nowrap; margin-top:2px}
+      .topnav{display:flex; gap:6px; margin:0 auto}
+      .topnav button{background:transparent; border:1px solid transparent; color:var(--ink-dim);
+        font-family:var(--serif); font-size:16px; letter-spacing:.12em; padding:8px 22px; border-radius:999px;
+        transition:all .25s}
+      .topnav button:hover{color:var(--gold-bright)}
+      .topnav button.active{color:#131a12; font-weight:700;
+        background:linear-gradient(180deg,#e8cd85,#c39a3f); border-color:#f0d48a;
+        box-shadow:0 0 18px rgba(212,175,90,.45)}
+      .top-tools{display:flex; align-items:center; gap:10px}
+      .search-box{display:flex; align-items:center; gap:8px; border:1px solid var(--line);
+        border-radius:999px; padding:0 14px; background:rgba(4,12,10,.6); min-height:2.4rem}
+      .search-box svg{flex:none; color:var(--gold-dim)}
+      .search-box input{background:transparent; border:0; outline:0; color:var(--ink); width:130px; font-size:14px; min-height:2rem}
+      .search-box input::placeholder{color:var(--ink-faint)}
+      .tool-btn{width:42px; height:42px; border-radius:50%; border:1px solid var(--line);
+        background:rgba(4,12,10,.6); color:var(--gold); display:flex; align-items:center; justify-content:center;
+        font-family:var(--serif); font-weight:700; font-size:13px; transition:all .2s}
+      .tool-btn:hover{border-color:var(--gold); color:var(--gold-bright); box-shadow:0 0 14px rgba(212,175,90,.35)}
+
+      /* ---------- 主区 ----------
+         布局修复：主区用具名 grid 区域，列表 / 展示 / 内容面板 / 信息卡
+         各占一个独立区域，互不覆盖。布局形态由 body[data-layout] 决定：
+           explore   列表 | 3D 展示 | 信息卡
+           immersive 3D 展示独占整行（独立展厅，居中）
+           culture   列表 | 文化内容（独立滚动） | 信息卡（仅档案字段）
+           panel     列表 | 3D 展示 | 功能面板（历史/互动，独立滚动） */
+      main{flex:1; display:grid; grid-template-columns:296px minmax(0,1fr) 348px;
+        grid-template-areas:"list viewer info"; gap:14px;
+        padding:14px 18px 10px; min-height:0}
+      .relic-panel{grid-area:list}
+      .viewer{grid-area:viewer}
+      .info-panel{grid-area:info}
+      .feature-panel{grid-area:panel}
+      body[data-layout="immersive"] main{grid-template-columns:minmax(0,1fr);
+        grid-template-areas:"viewer"; padding:14px 22px 12px}
+      body[data-layout="immersive"] .relic-panel,
+      body[data-layout="immersive"] .info-panel,
+      body[data-layout="immersive"] .feature-panel{display:none}
+      body[data-layout="culture"] main{grid-template-columns:280px minmax(0,1fr) 320px;
+        grid-template-areas:"list panel info"}
+      body[data-layout="culture"] .viewer{display:none}
+      body[data-layout="panel"] main{grid-template-columns:264px minmax(0,1fr) 360px;
+        grid-template-areas:"list viewer panel"}
+      body[data-layout="panel"] .info-panel{display:none}
+
+      /* ---------- 左侧文物列表 RelicList ---------- */
+      .relic-panel{display:flex; flex-direction:column; min-height:0; padding:6px 2px}
+      .panel-head{display:flex; align-items:baseline; justify-content:space-between; padding:4px 8px 12px}
+      .panel-head h2{margin:0; font-family:var(--serif); font-size:19px; letter-spacing:.2em; color:var(--gold-bright); font-weight:700}
+      .panel-head span{font-size:12px; color:var(--ink-dim)}
+      .relic-list{overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:2px 4px 8px; scrollbar-width:thin; scrollbar-color:var(--gold-deep) transparent}
+      .relic-item{display:flex; align-items:center; gap:12px; text-align:left; width:100%;
+        padding:12px 14px; border-radius:10px; border:1px solid rgba(212,175,90,.16);
+        background:linear-gradient(120deg, rgba(20,42,34,.75), rgba(9,20,16,.85)); color:var(--ink);
+        transition:all .25s; position:relative}
+      .relic-item .thumb{width:46px; height:46px; flex:none; border-radius:8px; display:flex; align-items:center; justify-content:center;
+        background:radial-gradient(circle at 50% 40%, rgba(77,154,126,.25), rgba(6,16,13,.9)); color:var(--gold); border:1px solid rgba(212,175,90,.18)}
+      .relic-item .thumb img{width:100%;height:100%;display:block;object-fit:contain;background:#071317}
+      .relic-item .rtext{min-width:0; flex:1 1 auto}
+      .relic-item .rname{font-family:var(--serif); font-size:16.5px; letter-spacing:.08em; color:var(--ink);
+        display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+      .relic-item .rsite{font-size:12px; color:var(--ink-dim); margin-top:3px; white-space:nowrap}
+      .relic-item .rarrow{margin-left:auto; color:var(--gold-dim); flex:none}
+      .relic-item.available:hover{border-color:var(--gold)}
+      .relic-item.selected{border-color:var(--gold); background:linear-gradient(120deg, rgba(52,84,62,.85), rgba(14,30,23,.95));
+        box-shadow:0 0 0 1px var(--gold), 0 0 22px rgba(212,175,90,.35), inset 0 0 24px rgba(212,175,90,.08)}
+      .relic-item.selected .rname{color:var(--gold-bright)}
+      .relic-item.locked{opacity:.62; cursor:not-allowed}
+      .soon-tag{margin-left:auto; flex:none; font-size:11px; letter-spacing:.1em; color:var(--patina);
+        border:1px solid rgba(77,154,126,.5); border-radius:999px; padding:3px 9px}
+      .no-result{padding:22px 10px; text-align:center; color:var(--ink-faint); font-size:13.5px; line-height:1.8}
+
+      /* ---------- 中央 3D Viewer ---------- */
+      .viewer{position:relative; border-radius:14px; overflow:hidden; min-height:0;
+        background:radial-gradient(90% 70% at 50% 42%, rgba(46,95,79,.28), rgba(4,12,10,.2) 70%)}
+      #gl{position:absolute; inset:0}
+      #gl canvas{display:block}
+      .gl-fallback{position:absolute; inset:0; display:none; flex-direction:column; gap:12px; align-items:center; justify-content:center;
+        text-align:center; color:var(--ink-dim); padding:30px; line-height:2; font-size:14px}
+      .viewer-tools{position:absolute; left:16px; top:50%; transform:translateY(-50%);
+        display:flex; flex-direction:column; gap:14px; z-index:5}
+      .vtool{width:52px; height:52px; border-radius:50%; border:1px solid var(--line);
+        background:rgba(6,17,14,.78); color:var(--gold); display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:1px; font-size:10px; letter-spacing:.05em;
+        transition:all .2s; backdrop-filter:blur(4px)}
+      .vtool:hover{border-color:var(--gold); box-shadow:0 0 16px rgba(212,175,90,.4); color:var(--gold-bright)}
+      .vtool.on{border-color:var(--gold); color:#131a12; background:linear-gradient(180deg,#e8cd85,#c39a3f);
+        box-shadow:0 0 18px rgba(212,175,90,.55)}
+      /* 第三阶段：提示移到展台上方的顶部中央，不再被展台金环穿过；
+         深色实底胶囊 + 高亮文字，保证在任何旋转角度下都清晰可读 */
+      .viewer-hint{position:absolute; left:50%; top:14px; transform:translateX(-50%); z-index:5;
+        display:flex; align-items:center; gap:8px; color:#ffdf8e; font-family:var(--serif);
+        letter-spacing:.15em; font-size:14px; font-weight:700; white-space:nowrap;
+        background:rgba(3,10,8,.92); border:1px solid rgba(212,175,90,.55); border-radius:999px;
+        padding:7px 16px; box-shadow:0 4px 18px rgba(0,0,0,.55)}
+      .viewer-hint small{font-family:var(--sans); letter-spacing:.05em; color:#f0ead6; font-size:11.5px; font-weight:400}
+
+
+      .fps-badge{position:absolute; right:14px; bottom:14px; z-index:5; font-size:11px; color:var(--ink-faint);
+        background:rgba(6,17,14,.6); padding:4px 10px; border-radius:999px; border:1px solid rgba(212,175,90,.12)}
+
+      /* 热点标注 */
+      .hotspot{position:absolute; z-index:6; width:38px; height:38px; margin:-19px 0 0 -19px; border-radius:50%;
+        border:1px solid var(--gold); background:rgba(10,24,19,.72); color:var(--gold-bright);
+        display:none; align-items:center; justify-content:center; font-size:12px; font-family:var(--serif);
+        box-shadow:0 0 0 0 rgba(212,175,90,.5); animation:pulse 2.2s infinite}
+      .hotspot.show{display:flex}
+      @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(212,175,90,.45)}70%{box-shadow:0 0 0 12px rgba(212,175,90,0)}100%{box-shadow:0 0 0 0 rgba(212,175,90,0)}}
+      .hotspot-card{position:absolute; z-index:7; left:16px; bottom:52px; max-width:320px; display:none;
+        background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; backdrop-filter:blur(8px)}
+      .hotspot-card.show{display:block}
+      .hotspot-card h3{margin:0 0 8px; font-family:var(--serif); color:var(--gold-bright); font-size:17px; letter-spacing:.1em}
+      .hotspot-card p{margin:0; font-size:13.5px; line-height:1.85; color:var(--ink)}
+      .hotspot-card .close-x{position:absolute; top:6px; right:8px; background:none; border:0; color:var(--ink-dim); font-size:18px; min-height:2rem; width:2rem}
+
+      /* ---------- 右侧信息卡 InfoPanel ---------- */
+      .info-panel{position:relative; border:1px solid var(--line); border-radius:12px; padding:26px 26px 20px;
+        background:linear-gradient(160deg, rgba(17,35,28,.94), rgba(7,17,14,.96)); overflow-y:auto; min-height:0}
+      .corner{position:absolute; width:64px; height:64px; color:rgba(212,175,90,.4); pointer-events:none}
+      .corner.tl{top:6px; left:6px}.corner.tr{top:6px; right:6px; transform:scaleX(-1)}
+      .corner.bl{bottom:6px; left:6px; transform:scaleY(-1)}.corner.br{bottom:6px; right:6px; transform:scale(-1)}
+      .info-panel h1{margin:2px 0 6px; font-family:var(--serif); font-weight:900; font-size:33px;
+        letter-spacing:.16em; color:var(--gold-bright); text-shadow:0 0 22px rgba(212,175,90,.3)}
+      .info-sub{color:var(--ink-dim); font-size:14.5px; letter-spacing:.12em; padding-bottom:16px; border-bottom:1px solid var(--line-soft)}
+      .spec{display:grid; grid-template-columns:86px 1fr; row-gap:13px; margin:18px 0 6px; font-size:14.5px}
+      .spec dt{color:var(--ink-dim); letter-spacing:.2em}
+      .spec dd{margin:0; color:var(--ink)}
+      .spec dd.pending{color:var(--patina)}
+      .info-sec{margin-top:20px}
+      .info-sec h3{margin:0 0 10px; font-family:var(--serif); font-size:16.5px; letter-spacing:.22em; color:var(--gold);
+        display:flex; align-items:center; gap:8px}
+      .info-sec p{margin:0; font-size:14px; line-height:2; color:var(--ink); text-align:justify}
+      .pending-note{font-size:11.5px; color:var(--ink-faint); margin-top:6px}
+      .explore-btn{margin-top:24px; width:100%; border:0; border-radius:10px; padding:13px;
+        font-family:var(--serif); font-size:16.5px; letter-spacing:.3em; font-weight:700; color:#181207;
+        background:linear-gradient(180deg,#ecd28c,#bd943a); box-shadow:0 6px 22px rgba(212,175,90,.3); transition:all .2s}
+      .explore-btn:hover{box-shadow:0 6px 28px rgba(212,175,90,.55); transform:translateY(-1px)}
+      .src-link{margin-top:14px; width:100%; background:none; border:0; color:var(--ink-dim); font-size:12.5px;
+        text-decoration:underline; text-underline-offset:4px}
+      .src-link:hover{color:var(--gold-bright)}
+
+      /* ---------- 功能面板（历史 / 互动 / 文化） ----------
+         布局修复：面板不再绝对定位覆盖画布，而是主网格中的独立列，
+         在自己的容器内滚动（overflow-y:auto + min-height:0）。 */
+      .feature-panel{display:none; flex-direction:column; min-height:0; min-width:0;
+        background:linear-gradient(160deg, rgba(17,35,28,.94), rgba(7,17,14,.96));
+        border:1px solid var(--line); border-radius:12px;
+        padding:22px 22px 16px; overflow-y:auto; scrollbar-width:thin;
+        scrollbar-color:var(--gold-deep) transparent}
+      .feature-panel.show{display:flex}
+      .feature-panel h2{margin:0 0 4px; font-family:var(--serif); font-size:21px; letter-spacing:.18em; color:var(--gold-bright)}
+      .feature-panel .fp-sub{font-size:12.5px; color:var(--ink-dim); margin-bottom:16px; line-height:1.7}
+      .fp-close{align-self:flex-end; background:none; border:1px solid var(--line); border-radius:999px;
+        color:var(--ink-dim); padding:4px 14px; font-size:12.5px; margin-bottom:10px}
+      .timeline{position:relative; margin:6px 0 0 8px; padding-left:26px}
+      .timeline::before{content:""; position:absolute; left:6px; top:8px; bottom:8px; width:1px;
+        background:linear-gradient(180deg, var(--gold), rgba(212,175,90,.1))}
+      .tl-item{position:relative; padding-bottom:26px}
+      .tl-item::before{content:""; position:absolute; left:-25px; top:5px; width:11px; height:11px; border-radius:50%;
+        background:#0a1a16; border:2px solid var(--gold); box-shadow:0 0 10px rgba(212,175,90,.6)}
+      .tl-year{font-family:var(--serif); font-size:20px; color:var(--gold-bright); letter-spacing:.08em}
+      .tl-item h4{margin:5px 0 6px; font-size:15px; color:var(--ink); letter-spacing:.06em}
+      .tl-item p{margin:0; font-size:13px; line-height:1.85; color:var(--ink-dim)}
+
+
+
+      .culture-body p{font-size:14px; line-height:2.05; color:var(--ink); text-align:justify; margin:0 0 14px}
+      .culture-body h3{font-family:var(--serif); color:var(--gold); letter-spacing:.2em; font-size:16px; margin:20px 0 10px}
+
+      /* ---------- 底部栏 ---------- */
+      footer{display:flex; align-items:center; gap:20px; padding:8px 22px 14px}
+      .slogan{font-family:var(--serif); color:var(--gold); letter-spacing:.28em; font-size:14.5px; white-space:nowrap;
+        display:flex; align-items:center; gap:12px}
+      .slogan::before,.slogan::after{content:""; width:44px; height:1px; background:linear-gradient(90deg, transparent, var(--gold-dim))}
+      .slogan::after{background:linear-gradient(90deg, var(--gold-dim), transparent)}
+      .bottomnav{margin:0 auto; display:flex; gap:4px; border:1px solid var(--line); border-radius:14px;
+        padding:5px; background:rgba(8,20,16,.9)}
+      .bottomnav button{display:flex; align-items:center; gap:9px; background:transparent; border:0; border-radius:10px;
+        color:var(--ink-dim); font-family:var(--serif); font-size:15.5px; letter-spacing:.14em; padding:10px 24px; transition:all .25s}
+      .bottomnav button:hover{color:var(--gold-bright)}
+      .bottomnav button.active{color:#141a10; font-weight:700; background:linear-gradient(180deg,#e8cd85,#c39a3f);
+        box-shadow:0 0 16px rgba(212,175,90,.4)}
+      .footer-spacer{width:230px}
+
+      /* ---------- 详情弹窗 DetailModal ---------- */
+      .modal-mask{position:fixed; inset:0; z-index:50; background:rgba(2,8,6,.78); display:none;
+        align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px)}
+      .modal-mask.show{display:flex}
+      .modal{width:min(680px,100%); max-height:88dvh; overflow-y:auto; overflow-x:auto; border:1px solid var(--gold-dim); border-radius:14px;
+        background:linear-gradient(165deg,#10241d,#071511); padding:30px 32px; position:relative;
+        box-shadow:0 24px 70px rgba(0,0,0,.7)}
+      .modal h2{margin:0 0 4px; font-family:var(--serif); font-size:26px; letter-spacing:.16em; color:var(--gold-bright)}
+      .modal .m-sub{color:var(--ink-dim); font-size:13px; letter-spacing:.1em; margin-bottom:8px}
+      .modal h3{font-family:var(--serif); color:var(--gold); letter-spacing:.2em; font-size:16.5px; margin:24px 0 9px}
+      .modal p{margin:0; font-size:14px; line-height:2; color:var(--ink); text-align:justify}
+      .modal .close-x{position:absolute; top:12px; right:14px; background:none; border:1px solid var(--line);
+        border-radius:50%; width:38px; height:38px; color:var(--ink-dim); font-size:17px}
+      .src-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px}
+      .src-table th,.src-table td{border-bottom:1px solid rgba(212,175,90,.14); padding:8px 6px; text-align:left; vertical-align:top; line-height:1.6}
+      .src-table th{color:var(--gold); font-weight:500; letter-spacing:.06em; white-space:nowrap}
+      .src-table td{color:var(--ink-dim)}
+      .src-table a{color:var(--patina); word-break:break-all}
+      .st-ok{color:#8fd0b6}.st-pending{color:#e0b45c}
+
+      /* ---------- Toast ---------- */
+      .toast{position:fixed; left:50%; bottom:96px; transform:translate(-50%,20px); z-index:60; opacity:0; pointer-events:none;
+        background:rgba(10,26,21,.95); border:1px solid var(--gold-dim); color:var(--gold-bright);
+        padding:11px 26px; border-radius:999px; font-size:14px; letter-spacing:.1em; transition:all .3s}
+      .toast.show{opacity:1; transform:translate(-50%,0)}
+
+      /* ---------- 页面状态 ---------- */
+      /* 沉浸展览：独立展厅布局——展示区在主容器内水平居中（最大宽度约束 +
+         margin auto），不复用探索页的三栏尺寸；画布随容器尺寸重算（见
+         SceneManager 的 ResizeObserver），模型始终处于视觉中心。 */
+      body[data-layout="immersive"] .viewer{width:100%; max-width:1180px; margin:0 auto;
+        border:1px solid var(--line-soft); border-radius:16px;
+        background:radial-gradient(75% 62% at 50% 40%, rgba(46,95,79,.32), rgba(4,12,10,.25) 72%);
+        box-shadow:inset 0 0 90px rgba(0,0,0,.5)}
+      .immersive-caption{display:none}
+      body[data-layout="immersive"] .immersive-caption{display:block; position:absolute;
+        left:50%; bottom:16px; transform:translateX(-50%); z-index:5; white-space:nowrap;
+        font-family:var(--serif); font-size:14.5px; letter-spacing:.14em; color:var(--gold-bright);
+        background:rgba(3,10,8,.88); border:1px solid rgba(212,175,90,.45); border-radius:999px;
+        padding:8px 20px}
+      body.page-interactive3d:where(.mode-interpretation) .hotspot-note{display:block}
+      .hotspot-note{display:none; position:absolute; left:50%; top:60px; transform:translateX(-50%); z-index:5;
+        background:rgba(6,17,14,.8); border:1px solid var(--line); border-radius:999px; padding:7px 18px;
+        font-size:12.5px; color:var(--gold-bright); letter-spacing:.08em; white-space:nowrap}
+
+      /* ---------- 手机端（第一阶段修复） ----------
+         原则：不缩放整页、不横向滚动页面；导航四入口全部可见；
+         信息层级 = 展台 → 文物名称与核心介绍（信息卡）→ 文物列表；
+         列表用两列网格卡片，名称/地点单行横排，绝不逐字换行。 */
+      @media (max-width:960px){
+        body{overflow-y:auto; overflow-x:clip}
+        #app{height:auto; min-height:100dvh; width:100%; max-width:100vw}
+        /* 顶栏：品牌一行、工具同行收紧、导航改为四等分网格（无裁切、无横滑） */
+        .topbar{flex-wrap:wrap; gap:8px 10px; padding:10px 12px; width:100%}
+        .brand{gap:9px; flex:1 1 auto; min-width:0}
+        .brand-name{font-size:16.5px; letter-spacing:.08em}
+        .brand-en{font-size:8.5px; letter-spacing:.12em}
+        .brand-mark{width:32px; height:32px}
+        .topnav{order:3; flex:1 1 100%; width:100%; margin:0; display:grid;
+          grid-template-columns:repeat(4, minmax(0,1fr)); gap:5px; overflow:visible}
+        .topnav button{padding:8px 2px; font-size:13.5px; letter-spacing:.04em;
+          white-space:nowrap; text-align:center; min-width:0}
+        .top-tools{margin-left:auto; flex:none; gap:7px}
+        .search-box{padding:0 10px; min-height:2.25rem}
+        .search-box input{width:64px; font-size:13px}
+        .tool-btn{width:38px; height:38px; min-height:38px}
+        /* 主区：单列纵排，信息卡提前到列表之前 */
+        main{display:flex; flex-direction:column; padding:10px 12px; gap:12px; width:100%; min-width:0}
+        .viewer{order:1; height:46dvh; min-height:300px; flex:none; width:100%}
+        .info-panel{order:3; overflow:visible; padding:20px 18px 16px; width:100%}
+        .info-panel h1{font-size:26px; letter-spacing:.1em}
+        .info-sub{font-size:13px; padding-bottom:12px}
+        .spec{grid-template-columns:72px minmax(0,1fr); font-size:13.5px; row-gap:10px}
+        .spec dt{letter-spacing:.12em}
+        .info-sec p{font-size:13.5px}
+        .corner{width:44px; height:44px}
+        /* 文物列表：两列网格，卡片纵向排布，文字单行横排 */
+        .relic-panel{order:4; padding:0; width:100%}
+        .panel-head{padding:2px 2px 10px}
+        .panel-head h2{font-size:17px}
+        .relic-list{display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+          gap:9px; overflow:visible; padding:2px 0 6px}
+        .relic-item{flex-direction:column; align-items:flex-start; gap:8px;
+          width:100%; min-width:0; padding:11px 12px}
+        .relic-item .thumb{width:40px; height:40px}
+        .relic-item .rtext{width:100%}
+        .relic-item .rname{font-size:15px; letter-spacing:.04em}
+        .relic-item .rsite{font-size:11.5px}
+        .relic-item .rarrow{display:none}
+        .soon-tag{margin-left:0; font-size:10.5px; padding:2px 8px}
+        .no-result{grid-column:1 / -1}
+        /* 手机端：面板回到文档流内独立成段（不再 fixed 抽屉覆盖画布），
+           高度封顶并在自身容器内滚动 */
+        .feature-panel{width:100%; max-height:72dvh; order:2}
+        body[data-layout="culture"] .feature-panel{max-height:none; overflow:visible}
+        body[data-layout="immersive"] .viewer{height:62dvh; min-height:380px}
+        footer{flex-wrap:wrap; justify-content:center; padding:6px 12px 12px; width:100%}
+        .slogan{order:2; font-size:12px; letter-spacing:.18em; white-space:normal; text-align:center}
+        .slogan::before,.slogan::after{width:22px}
+        .footer-spacer{display:none}
+        .bottomnav{order:1; width:100%; max-width:100%; justify-content:space-between}
+        .bottomnav button{padding:9px 3px; font-size:12.5px; letter-spacing:.04em; gap:4px;
+          flex:1; justify-content:center; white-space:nowrap; min-width:0}
+        .viewer-tools{left:10px; gap:10px}
+        .vtool{width:46px; height:46px}
+        .viewer-hint{font-size:12.5px; left:10px; top:12px; transform:none;
+          max-width:calc(100% - 148px); padding:6px 12px; white-space:normal; line-height:1.45}
+        .viewer-hint small{font-size:10.5px}
+        .hotspot-note{top:64px}
+        .hotspot-note{max-width:calc(100% - 20px); white-space:normal; text-align:center; line-height:1.5}
+
+        .hotspot-card{left:10px; right:10px; max-width:none; bottom:46px}
+        .modal{padding:24px 18px; width:100%}
+        .src-table{font-size:11.5px}
+        .src-table th{white-space:normal}
+        .toast{bottom:120px; width:max-content; max-width:92vw; text-align:center}
+      }
+      @media (max-width:380px){
+        .brand-name{font-size:15px}
+        .search-box input{width:48px}
+        .topnav button{font-size:12.5px}
+        .bottomnav button{font-size:11.5px}
+        .bottomnav button svg{display:none}
+      }
+      /* 文物探索首页：以深青展厅、克制的金线和文物主体建立视觉层次。 */
+      body.page-explore{
+        background:radial-gradient(ellipse at 52% 48%, #10232a 0%, #07141a 45%, #050d11 100%)}
+      body.page-explore .bg-pattern{opacity:.035; background-size:180px 180px}
+      body.page-explore .topbar{gap:22px; padding:12px 26px;
+        background:linear-gradient(180deg,rgba(7,17,20,.98),rgba(9,25,28,.94));
+        border-bottom-color:rgba(205,173,110,.3)}
+      body.page-explore .brand-mark{width:48px; height:48px}
+      body.page-explore .brand-name{font-size:23px; letter-spacing:.18em}
+      body.page-explore .brand-en{color:#b7a783}
+      body.page-explore .topnav{gap:12px}
+      body.page-explore .topnav button{padding:9px 20px; color:#b5ad9e}
+      body.page-explore .topnav button.active{color:var(--gold-bright);
+        background:linear-gradient(180deg,rgba(28,58,57,.9),rgba(10,30,33,.95));
+        border-color:rgba(218,182,109,.48); box-shadow:inset 0 -2px 0 var(--gold),0 5px 14px rgba(0,0,0,.35)}
+      body.page-explore .search-box,body.page-explore .tool-btn{background:rgba(4,12,17,.65)}
+      body.page-explore main{grid-template-columns:300px minmax(0,1fr) 340px;
+        gap:20px; padding:20px 24px 8px}
+      body.page-explore .relic-panel{padding:4px 0}
+      body.page-explore .panel-head{padding:5px 4px 14px}
+      body.page-explore .relic-list{gap:8px; padding:2px 4px 6px}
+      body.page-explore .relic-item{min-height:68px; padding:8px 12px; border-radius:8px;
+        background:linear-gradient(110deg,rgba(17,36,36,.82),rgba(7,18,23,.9));
+        border-color:rgba(194,166,105,.22)}
+      body.page-explore .relic-item .thumb{width:48px; height:48px; border-radius:5px;
+        background:radial-gradient(circle at 50% 35%,rgba(74,128,111,.26),rgba(6,17,19,.96))}
+      body.page-explore .relic-item .rname{font-size:15px}
+      body.page-explore .relic-item.selected{border-color:#d9b777;
+        background:linear-gradient(110deg,rgba(34,69,63,.94),rgba(11,33,37,.96));
+        box-shadow:0 0 0 1px rgba(235,200,125,.62),inset 0 0 22px rgba(199,161,78,.08),0 0 16px rgba(195,151,68,.18)}
+      body.page-explore .relic-item.locked{opacity:.8}
+      body.page-explore .soon-tag{font-size:10px; padding:2px 6px}
+      body.page-explore .viewer{border-radius:4px;
+        background:radial-gradient(ellipse at 50% 36%,rgba(38,77,78,.34),rgba(8,24,29,.32) 58%,rgba(3,12,16,.55) 100%);
+        box-shadow:inset 0 0 85px rgba(2,8,11,.72)}
+      body.page-explore .viewer-tools{left:16px; gap:10px}
+      body.page-explore .vtool{width:44px; height:44px;
+        background:rgba(5,18,22,.84); box-shadow:0 3px 12px rgba(0,0,0,.3)}
+      body.page-explore .vtool.on{color:var(--gold-bright);
+        background:rgba(23,44,42,.92); box-shadow:0 0 13px rgba(215,174,87,.25)}
+      body.page-explore .viewer-hint{
+        background:rgba(4,16,20,.88); border-color:rgba(205,171,103,.4); box-shadow:none}
+      body.page-explore .info-panel{align-self:start; max-height:100%;
+        padding:28px 26px 24px; border-color:rgba(207,174,110,.55);
+        background:radial-gradient(circle at 95% 8%,rgba(69,112,100,.16),transparent 38%),
+          linear-gradient(160deg,rgba(15,31,32,.96),rgba(5,17,21,.97));
+        box-shadow:inset 0 0 32px rgba(0,0,0,.25),0 12px 36px rgba(0,0,0,.22)}
+      body.page-explore .info-panel h1{font-size:34px; margin-bottom:8px}
+      body.page-explore .info-sub{border-bottom-color:rgba(209,176,110,.3); padding-bottom:20px}
+      body.page-explore .spec{row-gap:16px; margin:22px 0 8px}
+      body.page-explore .spec dt{color:#c2aa7e}
+      body.page-explore .explore-btn{margin-top:26px; padding:11px;
+        color:var(--gold-bright); border:1px solid rgba(210,174,101,.6);
+        background:linear-gradient(180deg,rgba(70,65,44,.8),rgba(26,34,30,.95)); box-shadow:none}
+      body.page-explore .src-link{margin-top:16px}
+      body.page-explore footer{padding-top:6px; background:linear-gradient(180deg,transparent,rgba(4,12,16,.6))}
+      body.page-explore .bottomnav{border-color:rgba(204,170,103,.5); background:rgba(7,20,24,.94)}
+      body.page-explore .bottomnav button.active{color:var(--gold-bright);
+        background:linear-gradient(180deg,rgba(64,59,43,.9),rgba(21,35,35,.95));
+        box-shadow:inset 0 -2px 0 var(--gold),0 0 14px rgba(212,175,90,.15)}
+      @media (max-width:960px){
+        body.page-explore .topbar{gap:8px 10px; padding:10px 12px}
+        body.page-explore .brand-mark{width:32px; height:32px}
+        body.page-explore .brand-name{font-size:16.5px; letter-spacing:.08em}
+        body.page-explore .topnav{gap:5px}
+        body.page-explore .topnav button{padding:8px 2px}
+        body.page-explore main{display:flex; padding:10px 12px; gap:12px}
+        body.page-explore .info-panel{align-self:stretch; max-height:none; padding:20px 18px 16px}
+        body.page-explore .info-panel h1{font-size:26px}
+        body.page-explore .relic-item{min-height:0; padding:11px 12px}
+        body.page-explore .relic-item .thumb{width:40px; height:40px}
+        body.page-explore .relic-item .rname{font-size:15px}
+        body.page-explore .viewer-tools{left:10px}
+        body.page-explore .vtool{width:44px; height:44px}
+      }
+      /* 高保真复核：克制的古铜色、侧墙暗部与紧凑的档案排版。 */
+      body.page-explore{--gold:#b7a077;--gold-bright:#dfce9e;--patina:#799082;
+        background:#061719 url('assets/atmosphere/ancient-shu-hall.png') center center / cover no-repeat fixed}
+      body.page-explore .bg-pattern{opacity:.012;background-size:460px 460px}
+      body.page-explore .topbar{height:76px;padding:10px 28px;gap:22px}
+      body.page-explore .brand-name{font-size:22px;font-weight:600;letter-spacing:.12em}
+      body.page-explore .brand-en{font-family:var(--serif);font-size:10px}
+      body.page-explore .topnav{margin-left:12px;gap:10px}
+      body.page-explore .topnav button{font-size:17px;font-weight:400}
+      body.page-explore .top-tools{margin-left:auto}
+      body.page-explore main{grid-template-columns:270px minmax(0,1fr) 326px;gap:18px;padding:24px 24px 10px}
+      body.page-explore .relic-list{gap:7px}
+      body.page-explore .relic-item{height:73px;flex-shrink:0;border-radius:5px;padding:6px 10px;gap:12px;background:linear-gradient(110deg,rgba(24,39,39,.65),rgba(6,14,18,.7));border-color:rgba(171,166,134,.22)}
+      body.page-explore .relic-item .thumb{width:56px;height:56px;border:0;background:radial-gradient(ellipse,rgba(98,109,87,.14),transparent 70%);color:#a49c76}
+      body.page-explore .thumb svg{width:34px;height:40px;filter:drop-shadow(1px 2px 1px #000)}
+      body.page-explore .relic-item .rname{font-size:16px;font-weight:400}
+      body.page-explore .relic-item .rsite{font-size:11px;color:#89918c}
+      body.page-explore .soon-tag{position:absolute;right:8px;bottom:7px;border:0;padding:0;font-size:9px;color:#70887d}
+      body.page-explore .relic-item.selected{box-shadow:inset 0 0 0 1px rgba(214,193,139,.4),0 0 12px rgba(182,151,83,.15)}
+      body.page-explore .viewer{isolation:isolate;box-shadow:none;background:transparent;overflow:visible}
+      body.page-explore .viewer::before,body.page-explore .viewer::after{content:"";position:absolute;z-index:-1;pointer-events:none;width:22%;height:85%;top:-3%;opacity:.24;filter:blur(2px);background:linear-gradient(90deg,transparent,rgba(78,107,99,.22),transparent),repeating-linear-gradient(0deg,transparent 0 64px,rgba(96,120,105,.13) 65px 68px,transparent 70px 110px);border-left:14px double rgba(88,115,105,.18);border-right:4px solid rgba(88,115,105,.13)}
+      body.page-explore .viewer::before{left:2%;transform:perspective(400px) rotateY(25deg)}
+      body.page-explore .viewer::after{right:1%;transform:perspective(400px) rotateY(-25deg)}
+      body.page-explore .viewer-hint{top:auto;bottom:12px;padding:4px 12px;border-color:rgba(181,157,103,.23);font-weight:400}
+
+      body.page-explore .viewer-tools{left:14px;gap:15px}
+      body.page-explore .vtool{width:46px;height:46px;border-color:rgba(192,173,128,.4)}
+      body.page-explore .info-panel{padding:32px 25px 22px;align-self:stretch;display:flex;flex-direction:column;border-radius:7px 7px 16px 7px;background:radial-gradient(ellipse at 100% 55%,rgba(34,65,59,.18),transparent 70%),linear-gradient(140deg,#0d171a,#071317);border-color:rgba(192,170,120,.5)}
+      body.page-explore .info-panel .corner.tr{width:110px;height:110px;opacity:.5;top:0;right:0}
+      body.page-explore .info-panel h1{font-weight:500;font-size:31px;letter-spacing:.16em;text-shadow:none}
+      body.page-explore .info-sub{font-size:15px;color:#929a94;padding-bottom:18px}
+      body.page-explore .spec{font-size:13px;grid-template-columns:76px minmax(0,1fr);row-gap:11px;margin:20px 0}
+      body.page-explore .spec dt{color:#b5a381;font-weight:400}
+      body.page-explore .spec dd{color:#b5bcb7;font-weight:400;line-height:1.8}
+      .home-info-copy{display:none}
+      body.page-explore .home-info-copy{display:block;flex:1;border-top:1px solid rgba(175,156,112,.18);padding-top:22px}
+      body.page-explore .home-info-copy section+section{margin-top:26px}
+      body.page-explore[data-layout="panel"] .info-panel{display:none}
+      body.page-explore .home-info-copy h3{font-family:var(--serif);font-size:17px;color:#c7b486;font-weight:500;letter-spacing:.1em;margin:0 0 10px}
+      body.page-explore .home-info-copy p{font-size:12.5px;line-height:1.95;color:#abb4ae;margin:0;text-align:justify}
+      body.page-explore .home-info-copy small{font-family:var(--sans);font-size:10px;color:#8e998e;letter-spacing:0;margin-left:8px}
+      body.page-explore .explore-btn{width:80%;display:block;margin:20px auto 0;font-size:14px;padding:9px;font-weight:400;border-radius:5px}
+      body.page-explore .src-link{font-size:10px;min-height:28px;margin-top:8px;color:#858b80}
+      body.page-explore footer{position:relative;min-height:64px}
+      body.page-explore .bottomnav{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;border-radius:22px 22px 5px 5px;padding:5px 10px}
+      body.page-explore .bottomnav button{padding:10px 17px;font-size:14px;font-weight:400;letter-spacing:.08em}
+      body.page-explore .slogan{font-size:12px;letter-spacing:.12em;gap:8px}
+      body.page-explore .slogan::before,body.page-explore .slogan::after{width:20px}
+      @media (min-width:961px) and (max-width:1200px){
+        body.page-explore .brand-name{font-size:18px}body.page-explore .topbar{gap:10px;padding:10px 16px}
+        body.page-explore .topnav{gap:3px;margin:0 auto}body.page-explore .topnav button{padding:8px 10px}
+        body.page-explore main{grid-template-columns:235px minmax(0,1fr) 290px;gap:12px;padding:18px 16px}
+        body.page-explore .slogan{max-width:210px;white-space:normal}
+      }
+      @media (max-width:960px){
+        body.page-explore .topbar{height:auto;padding:10px 12px;gap:8px}
+        body.page-explore .brand-name{font-size:16.5px}body.page-explore .brand-en{font-size:8px}
+        body.page-explore .topnav{margin:0;gap:5px}body.page-explore .topnav button{font-size:13px}
+        body.page-explore main{display:flex;padding:10px 12px;gap:12px}
+        body.page-explore .viewer{height:52dvh;min-height:390px}
+        body.page-explore .info-panel{padding:25px 22px 18px}
+        body.page-explore .info-panel h1{font-size:28px}
+        body.page-explore .home-info-copy p{font-size:13px}
+        body.page-explore .relic-item{height:142px;padding:10px 12px}
+        body.page-explore .relic-item .thumb{width:44px;height:45px}
+        body.page-explore .soon-tag{right:10px;bottom:10px}
+        body.page-explore .bottomnav{position:static;transform:none;padding:5px;margin:0 auto}
+        body.page-explore .bottomnav button{padding:10px 2px;font-size:12px;letter-spacing:0}
+        body.page-explore .viewer-hint{left:50%;transform:translateX(-50%);max-width:90%;width:max-content;bottom:10px;top:auto}
+        body.page-explore .viewer-hint small{font-size:10px}
+        body.page-explore .slogan{font-size:11px}
+      }
+      /* 首页氛围图为项目内绘制的装饰纹样，不代表馆藏器物纹饰。 */
+      body.page-explore .bg-pattern{opacity:0}
+      body.page-explore .bg-vignette{background:
+        linear-gradient(90deg,rgba(2,10,12,.31),transparent 31%,transparent 69%,rgba(2,10,12,.33)),
+        linear-gradient(180deg,rgba(2,10,12,.2),transparent 23%,transparent 68%,rgba(2,10,12,.3))}
+      body.page-explore .viewer::before,body.page-explore .viewer::after{display:none}
+      body.page-explore .relic-item .thumb{position:relative;overflow:hidden;border:1px solid rgba(183,160,111,.26);background:#071317}
+      body.page-explore .thumb img{width:100%;height:100%;display:block;object-fit:contain}
+      body.page-explore .thumb svg{display:none}
+      body.page-explore .thumb::after{content:'艺术示意';position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(2,9,11,.88));color:#cab991;text-align:center;font-size:8px;line-height:13px;letter-spacing:.02em}
+      body.page-explore .relic-item.selected .thumb{border-color:rgba(227,196,128,.75);box-shadow:0 0 12px rgba(207,172,108,.22)}
+      @media (max-width:960px){body.page-explore .thumb::after{font-size:7px;line-height:11px}}
+      @media (prefers-reduced-motion:reduce){
+        .hotspot{animation:none}
+        *{transition:none !important}
+      }
+      .hall-label,.hall-paging{display:none}
+      body[data-layout="immersive"]:not([data-hall="entity"]) .hall-paging{
+        position:absolute;z-index:5;bottom:10px;left:50%;transform:translateX(-50%);
+        display:flex;white-space:nowrap;background:#071e1bec;border:1px solid #7f6c47;
+        border-radius:8px;padding:0 10px;font-size:14px
+      }
+      body[data-layout="immersive"]:not([data-hall="entity"]) .hall-paging button{min-height:42px}
+      body[data-layout="immersive"]:not([data-hall="entity"]) .immersive-caption{bottom:62px;font-size:13px;padding:6px 10px;max-width:95%;white-space:normal;text-align:center}
+      body[data-hall="entity"] main{padding:0;gap:0;background:#031918 linear-gradient(90deg,rgba(0,11,12,.38),transparent 62%)}
+      body[data-hall="entity"] .viewer{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;
+        background:linear-gradient(90deg,rgba(0,10,11,.59) 8%,rgba(0,12,12,.72) 25%,rgba(0,12,12,.12) 62%),url('assets/backgrounds/immersive.png') center/cover no-repeat}
+      body[data-hall="entity"] #gl,body[data-hall="entity"] .gl-fallback{left:43%;right:8%}
+      body[data-hall="entity"] footer,body[data-hall="entity"] .immersive-caption,body[data-hall="entity"] .viewer-hint{display:none}
+      body[data-hall="entity"] .viewer-tools{left:auto;right:2%;opacity:0;transition:opacity .2s}
+      body[data-hall="entity"] .viewer:hover .viewer-tools,body[data-hall="entity"] .viewer-tools:focus-within{opacity:1}
+      body[data-hall="entity"] .hall-label{position:absolute;left:11.8%;top:10%;width:31%;display:flex;
+        flex-direction:column;justify-content:center;align-items:flex-start;font-family:var(--serif);color:#e5c890}
+      .hall-index{display:flex;align-items:baseline;gap:.4em;width:100%;font-size:clamp(24px,2.4vw,42px);line-height:1;color:#dfb96f}
+      .hall-index small{font-size:.5em}.hall-index:after{content:"";height:1px;align-self:center;flex:1;margin-left:1em;background:linear-gradient(90deg,#99835b,transparent)}
+      .hall-label h1{font:600 clamp(41px,4.95vw,96px)/1.14 var(--serif);letter-spacing:.075em;white-space:nowrap;margin:3.5vh 0 1vh;color:#e8cb93}
+      .hall-en{font:500 clamp(12px,1.12vw,22px)/1.5 Georgia,serif;letter-spacing:.27em}
+      .hall-label p{line-height:1.78;letter-spacing:.055em;font-size:clamp(15px,1.35vw,24px);margin:0;color:#d8c5a2}
+      .hall-label p:before{content:"";display:block;background:#cfa754;width:4.5vw;height:3px;margin:3.5vh 0}
+      .hall-modes{display:flex;gap:1.3vw;margin-top:4.6vh}
+      .hall-modes button{border:1px solid #9d834d;border-radius:8px;padding:.63em 1.2em;font:500 clamp(14px,1.42vw,24px)/1.4 var(--serif);letter-spacing:.07em}
+      .hall-modes [aria-pressed="true"]{background:linear-gradient(#ead098,#c99f52);color:#221b10}
+      .hall-modes :disabled{background:#081b1ad9;color:#baa782;cursor:not-allowed}
+      .hall-modes [aria-pressed="false"]:enabled{background:#081b1ad9;color:#e5c890}
+      #hallCloudStatus{font-size:13px;color:#e5c890;margin-top:8px}
+      .hall-paging{align-items:center;gap:1.1em;color:#aa936c}
+      .hall-paging button{font:inherit;letter-spacing:.1em;color:#ddc59b;background:none;border:0;padding:.3em 0}
+      .hall-paging button:disabled{opacity:.4}.hall-paging button:hover:enabled{color:#fff0cc}
+      body[data-hall="entity"] .hall-paging{display:flex;position:absolute;left:11.8%;bottom:11%;width:30%;padding-top:1vh;border-top:1px solid #ad956255;font:clamp(15px,1.35vw,24px) var(--serif)}
+      @media(max-height:580px){body[data-hall="entity"] .hall-label{top:2%;bottom:13%}.hall-label h1{font-size:3.6vw;margin-top:1vh}.hall-label p:before{margin:1vh 0}.hall-modes{margin-top:1vh}}
+      body[data-hall="entity"]:not([data-hall-item="bronze-standing"]) #gl{mask-image:linear-gradient(90deg,transparent,#000 7%,#000 94%,transparent)}
+      .page-immersive .top-tools{position:relative}
+      .page-immersive .topbar{position:relative;z-index:10}
+      #hallSearch{position:absolute;top:100%;left:0;background:#0b201d;border:1px solid #776548;border-radius:8px;padding:6px;min-width:156px;color:#ddc59b}
+      #hallSearch button{display:block;text-align:left;width:100%;color:inherit;background:none;border:none;padding:6px 10px}
+      #hallSearch button:is(:focus,:hover){background:#293b31}
+    </style>
+  <link rel="stylesheet" href="assets/culture.css">
+  <link rel="stylesheet" href="assets/interactive.css"><link rel="stylesheet" href="assets/observation.css"><link rel="stylesheet" href="assets/history-desk.css">
+  <link rel="stylesheet" href="assets/gallery.css">
+  </head>
+  <body>
+    <div class="bg-pattern"></div>
+    <div class="bg-vignette"></div>
+    <div id="app">
+
+      <!-- ===== 组件 TopBar ===== -->
+      <header class="topbar">
+        <div class="brand">
+          <svg class="brand-mark" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="5" y="5" width="38" height="38" rx="3"/>
+            <path d="M13 13h22M13 22h22M13 31h22M17 13v22M24 13v22M31 13v22" opacity=".65"/>
+            <circle cx="24" cy="24" r="3.4" fill="currentColor" stroke="none"/>
+          </svg>
+          <div>
+            <div class="brand-name">三星堆数字博物馆</div>
+            <div class="brand-en">SANXINGDUI DIGITAL MUSEUM</div>
+          </div>
+        </div>
+        <nav class="topnav" id="topnav" aria-label="页面导航"></nav>
+        <div class="top-tools">
+          <label class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="searchInput" type="search" placeholder="搜索文物..." aria-label="搜索文物" />
+          </label>
+          <div id="hallSearch" aria-label="文物搜索结果" hidden></div>
+          <button class="tool-btn" id="vrBtn" aria-label="VR 模式">VR</button>
+          <button class="tool-btn" id="fsBtnTop" aria-label="全屏">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== 组件 RelicList ===== -->
+        <aside class="relic-panel">
+          <div class="panel-head"><h2>文物列表</h2><span id="relicCount"></span></div>
+          <div class="relic-list" id="relicList"></div>
+        </aside>
+
+        <!-- ===== 组件 Viewer3D ===== -->
+        <section class="viewer" id="viewer">
+          <div id="gl"></div>
+          <div class="gl-fallback" id="glFallback">3D 引擎加载失败，请检查网络后刷新页面。<br/>文物数据与介绍仍可在右侧查看。</div>
+          <div class="hotspot-note">点击文物上的标注查看解读</div>
+          <header class="history-caption"><small>3D 互动　/　历史背景</small><h1 id="historyName"></h1><p id="historyEnglish" lang="en"></p></header><header class="workbench-heading"><small id="studyEnglish"></small><h1 id="studyName"></h1><p>拖动旋转 · 滚轮缩放</p></header>
+          <div class="viewer-tools">
+            <button class="vtool on" id="btnRotate" aria-label="360 度自动旋转">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+              <span>360°</span>
+            </button>
+            <button class="vtool" id="btnZoomIn" aria-label="放大">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+              <span>放大</span>
+            </button>
+            <button class="vtool" id="btnZoomOut" aria-label="缩小">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg>
+              <span>缩小</span>
+            </button>
+            <button class="vtool" style="display:none" id="resetExhibit" aria-label="重置视角"><span aria-hidden="true">↺</span><span>重置</span></button>
+            <button class="vtool" id="btnFs" aria-label="全屏展示">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+              <span>全屏</span>
+            </button>
+          </div>
+          <div id="hotspotLayer"></div>
+          <div class="hotspot-card" id="hotspotCard">
+            <button class="close-x" id="hotspotClose" aria-label="关闭标注">×</button>
+            <h3 id="hotspotTitle"></h3>
+            <p id="hotspotText"></p>
+          </div>
+          <div class="viewer-hint">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+            360° <small>拖动旋转 · 滚轮 / 双指缩放</small>
+          </div>
+          <div class="immersive-caption" id="immersiveCaption"></div>
+          <section class="hall-label" aria-labelledby="hallTitle">
+            <div class="hall-index" id="hallIndex"><span id="hallNumber"></span><small>/ 08</small></div>
+            <h1 id="hallTitle"></h1>
+            <div class="hall-en" id="hallEnglish" lang="en"></div>
+            <p id="hallCopy"></p>
+            <div class="hall-modes" role="group" aria-label="展品展示模式">
+              <button type="button" id="hallSolid" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:-.17em"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5m-9 5v10"/></svg> 实体展示</button>
+              <button type="button" id="hallCloud" disabled aria-pressed="false">⠿ 点云展示</button>
+            </div>
+            <span id="hallCloudStatus" role="status" hidden></span>
+          </section>
+          <nav class="hall-paging" aria-label="沉浸展览翻页"><button id="hallPrev">〈 上一件</button><span aria-hidden="true">|</span><button id="hallNext">下一件 〉</button></nav>
+        </section>
+
+          <!-- ===== 功能面板：历史背景 ===== -->
+          <div class="feature-panel" id="historyPanel">
+            <button class="fp-close" data-close-panel>收起</button>
+            <h2>历史背景</h2>
+            <div class="fp-sub">当前展品的类型资料与考古参照</div>
+            <div class="timeline" id="timeline"></div>
+            <article class="history-folio" aria-label="考古档案">
+              <header>考古档案 <span lang="en">FIELD RECORD</span></header>
+              <div class="history-date"><small>考古记录年份</small><strong id="historyYear"></strong></div>
+              <span class="history-ref-label">馆藏与发掘资料参照</span><p id="historyReference"></p>
+              <div id="historyChapters" role="group" aria-label="选择史料章节">
+                <button data-key="discovery" aria-controls="historyText">考古发现</button>
+                <button data-key="background" aria-controls="historyText">历史语境</button>
+              </div>
+              <p id="historyText" aria-live="polite"></p>
+              <details id="historyRefs"><summary>本段来源 <span id="historyRefCount"></span></summary><div id="historyLinks"></div></details>
+              <label>切换文物<select id="historySelect"></select></label>
+            </article>
+          </div>
+
+          <!-- ===== 功能面板：互动体验 ===== -->
+          <section class="feature-panel" id="tracePanel" aria-labelledby="traceTitle">
+            <header class="trace-header"><div><small>互动体验　/　模型观察</small><h1 id="traceTitle">器形寻迹</h1></div>
+              <label>切换器物 <select id="traceSelect"></select></label></header>
+            <div class="trace-work">
+              <figure class="trace-figure"><figcaption><strong id="traceName"></strong><span>模型点云图版</span></figcaption>
+                <div id="traceBoard" tabindex="0" role="group" aria-label="器形观察区，方向键移动观察镜，回车标记" aria-describedby="tracePrompt traceHelp">
+                  <img id="traceImage" draggable="false" alt=""><i id="traceLens"></i><div id="traceMarks"></div>
+                </div>
+              </figure>
+              <section class="trace-notes"><small id="traceNumber"></small><h2 id="traceRoute"></h2>
+                <div id="traceSample" role="img" aria-label="待寻找部位的放大样片"></div><p id="tracePrompt"></p>
+                <p id="traceHelp">点按或拖动图上的观察镜，比对样片中心。也可用方向键移动，回车标记。</p>
+                <div class="trace-actions"><button id="traceConfirm">标记此处</button><button id="traceHint">方位提示</button><button id="traceNext" hidden>观察下一件</button><button id="traceReplay" hidden>重新观察</button><button id="traceRetry" hidden>重载图版</button></div>
+                <p id="traceFeedback" role="status"></p><details id="traceCulture" hidden><summary>文化读本 · 学术解释</summary><p></p><div></div></details>
+                <div id="traceLedger"></div>
+              </section>
+            </div>
+          </section>
+
+          <!-- ===== 功能面板：文化解读 ===== -->
+          <div class="feature-panel" id="culturePanel">
+            <article class="folio">
+              <header class="folio-cover">
+                <div class="folio-intro">
+                  <p class="folio-kicker">文化解读 <span>/</span> 器物读本</p>
+                  <h1 id="folioName"></h1>
+                  <p class="folio-en" id="folioEnglish" lang="en"></p>
+                  <p class="folio-lead" id="folioLead"></p>
+                  <label class="folio-picker">切换读本 <select id="folioSelect" aria-label="切换文物读本"></select></label>
+                </div>
+                <figure class="folio-plate">
+                  <img id="folioImage" alt="" loading="lazy">
+                  <figcaption><span id="folioPlateLabel"></span><span>艺术化示意图</span></figcaption>
+                </figure>
+              </header>
+              <div class="folio-spread">
+                <section class="folio-history" aria-labelledby="folioHistory">
+                  <p class="folio-kicker" lang="en">CHRONOLOGY</p>
+                  <h2 id="folioHistory">器物背景与考古发现</h2>
+                  <ol id="folioEntries"></ol>
+                </section>
+                <section class="folio-record" aria-labelledby="folioRecord">
+                  <p class="folio-kicker" lang="en">OBJECT RECORD</p>
+                  <h2 id="folioRecord">文物文化档案</h2>
+                  <dl id="folioFields"></dl>
+                  <p class="folio-note" id="folioNote"></p>
+                  <div class="folio-sources" id="folioSources"></div>
+                </section>
+              </div>
+            </article>
+          </div>
+
+        <aside class="study-guide" aria-labelledby="studyGuideTitle">
+          <small>3D 互动 · 器物观察</small>
+          <h2 id="studyGuideTitle"></h2><p id="studyIntro"></p>
+          <div id="studyIndex"></div>
+          <section id="studyDetail" aria-live="polite" hidden>
+            <button id="studyClose" aria-label="关闭局部解读">×</button><small>模型观察</small>
+            <h3 id="studyTitle"></h3><p id="studyText"></p><small>依据 · 当前展品 GLB 模型</small>
+          </section>
+          <label>当前展品<select id="studySelect"></select></label>
+        </aside>
+        <!-- ===== 组件 InfoPanel ===== -->
+        <aside class="info-panel" id="infoPanel"></aside>
+      </main>
+
+      <!-- ===== 底部栏：标语 + BottomNav ===== -->
+      <footer>
+        <div class="slogan">探秘古蜀文明 · 感受千年魅力</div>
+        <nav class="bottomnav" id="bottomnav" aria-label="功能导航"></nav>
+        <div class="footer-spacer"></div>
+      </footer>
+    </div>
+
+    <!-- ===== 组件 DetailModal ===== -->
+    <div class="modal-mask" id="modalMask">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="close-x" id="modalClose" aria-label="关闭详情">×</button>
+        <h2 id="modalTitle"></h2>
+        <div class="m-sub" id="modalSub"></div>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <!-- ================================================================
+         数据层：relics.json —— 全站唯一数据源
+         列表 / 3D  viewer / 信息卡 均只读此数据，杜绝三处不一致。
+         每字段带 status / source / sourceUrl / verifiedAt（核实日期）。
+         ================================================================ -->
+    <script type="application/json" id="relics-json">
+{
+  "museum": {
+    "name": "三星堆数字博物馆",
+    "slogan": "探秘古蜀文明 · 感受千年魅力"
+  },
+  "relics": [
+    {
+      "id": "bronze-mask",
+      "available": true,
+      "icon": "mask",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/bronze-mask.glb",
+        "displaySize": 3.65
+      },
+      "hotspots": [
+        {
+          "id": "eyes",
+          "label": "眼",
+          "surface": [
+            0.64,
+            0.65
+          ],
+          "title": "双眼",
+          "text": "从正面观察眼部的轮廓和层次，也可以旋转模型查看眼部与鼻梁的关系。"
+        },
+        {
+          "id": "brow",
+          "label": "眉",
+          "surface": [
+            0.64,
+            0.76
+          ],
+          "title": "眉部",
+          "text": "观察眉线与眼部轮廓之间的距离，以及眉部向两侧延伸的形态。"
+        },
+        {
+          "id": "nose",
+          "label": "鼻",
+          "surface": [
+            0.5,
+            0.46
+          ],
+          "title": "鼻梁与鼻翼",
+          "text": "从侧面查看鼻梁和鼻翼向前凸出的程度。"
+        },
+        {
+          "id": "ears",
+          "label": "耳",
+          "surface": [
+            0.88,
+            0.51
+          ],
+          "title": "耳部纹饰",
+          "text": "观察耳部向两侧展开的轮廓及其表面纹饰。"
+        },
+        {
+          "id": "patina",
+          "label": "锈",
+          "surface": [
+            0.55,
+            0.24
+          ],
+          "title": "表面色泽",
+          "text": "放大观察下部表面的色泽变化和纹理。"
+        }
+      ]
+    },
+    {
+      "id": "bronze-tree",
+      "available": true,
+      "icon": "tree",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/bronze-tree.glb",
+        "displaySize": 3.65
+      }
+    },
+    {
+      "id": "bronze-standing",
+      "available": true,
+      "icon": "figure",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/bronze-standing.glb",
+        "displaySize": 3.65
+      }
+    },
+    {
+      "id": "bronze-zongmu",
+      "available": true,
+      "icon": "mask",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/bronze-zongmu.glb",
+        "displaySize": 3.65
+      }
+    },
+    {
+      "id": "gold-mask",
+      "available": true,
+      "icon": "mask",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/gold-mask.glb",
+        "displaySize": 3.5
+      }
+    },
+    {
+      "id": "bronze-head",
+      "available": true,
+      "icon": "head",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/bronze-head.glb",
+        "displaySize": 3.35
+      }
+    },
+    {
+      "id": "bronze-bird-bell",
+      "available": true,
+      "icon": "bell",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/bronze-bird-bell.glb",
+        "displaySize": 3.55,
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ]
+      }
+    },
+    {
+      "id": "jade-zhang",
+      "available": true,
+      "icon": "zhang",
+      "model": {
+        "type": "glb",
+        "url": "assets/models/jade-zhang.glb",
+        "displaySize": 3.65
+      }
+    }
+  ]
+}
+    </script>
+
+    <script src="assets/vendor/three.min.js"></script>
+    <script src="assets/vendor/OrbitControls.js"></script>
+    <script src="assets/vendor/GLTFLoader.js"></script>
+    <script src="assets/exhibit-points.js"></script>
+    <script src="assets/culture-data.js"></script>
+    <script src="assets/relic-hotspots.js"></script>
+    <script src="assets/mask-study.js"></script>
+    <script src="assets/observation/anchors.js"></script>
+    <script src="assets/observation.js"></script><script src="assets/history-desk.js"></script>
+
+    <script>
+    /* ================================================================
+       三星堆数字博物馆 · 第一阶段主程序
+       模块划分（单文件内以模块对象组织，便于后续拆分）：
+         DataService     读取展品索引及文化读本资料
+         Store           统一状态：page / mode / relicId / autoRotate /
+                         fullscreen
+         BaiduAdapter    百度平台接入层 —— 第一阶段仅桩接口，无真实请求
+         ModelLoader     模型统一入口：归一化中心点 / 缩放 / 朝向 / 材质
+         ExhibitionStage 固定青铜展盘
+         PerformanceGuard FPS 监测、降分辨率、后台暂停
+         SceneManager    场景 / 相机 / 灯光 / 渲染循环
+         Components      TopBar / RelicList / Viewer3D / InfoPanel /
+                         BottomNav / DetailModal
+         Features        Interpretation（热点）/ History（时间线）/
+                         Observation（器形寻迹）/ Culture（文化解读）
+       ================================================================ */
+    'use strict';
+
+    /* ---------------- DataService ---------------- */
+    var DataService = (function () {
+      var raw = document.getElementById('relics-json').textContent;
+      var db = JSON.parse(raw);
+      var pendingReason = '项目模型缺少可核对的馆藏编号或建模出处。';
+      var statuses = {verified:'已核实（类型）', interpretation:'学术解释', observation:'模型观察', pending:'待核实', project:'项目标注'};
+      var archive = {reference:'类型参照', identity:'馆藏对应', era:'年代', size:'尺寸', material:'材质（类型）', site:'出土地点', pit:'出土坑位'};
+      var topics = {observation:'造型特征', background:'历史背景', discovery:'考古发现', meaning:'文化内涵', value:'历史价值'};
+
+      db.relics.forEach(function (relic) {
+        var culture = museumCulture.records[relic.id];
+        relic.culture = culture;
+        relic.hotspots = relicHotspots[relic.id] || relic.hotspots;
+        var fields = relic.fields = {
+          name:{value:culture.name, source:'项目展品索引', status:'project'},
+          siteShort:{value:'三星堆文化专题'},
+          observation:{value:culture.observation, source:'项目现有 3D 模型', status:'observation'}
+        };
+        ['identity','era','size','site','pit'].forEach(function (key) {
+          fields[key] = {value:'待核实', source:pendingReason, status:'pending'};
+        });
+        function cited(value, refs) {
+          return {value:value, refs:refs, status:'verified', verifiedAt:'2026-11-19'};
+        }
+        fields.reference = cited(culture.reference, [...new Set(culture.intro.slice(1).concat(culture.discovery.slice(1)))]);
+        fields.material = cited(culture.material, culture.intro.slice(1));
+        ['intro','background','discovery','meaning','value'].forEach(function (key) {
+          var entry = culture[key];
+          fields[key] = cited(entry[0], entry.slice(1));
+        });
+        fields.meaning.status = 'interpretation';
+      });
+      function field(relic, key) {
+        var f = relic.fields[key];
+        return f ? f.value : '';
+      }
+      return {
+        all: function () { return db.relics; },
+        count: function () { return db.relics.length; },
+        get: function (id) {
+          for (var i = 0; i < db.relics.length; i++) if (db.relics[i].id === id) return db.relics[i];
+          return db.relics[0];
+        },
+        field: field,
+        archive: archive,
+        topics: topics,
+        pendingReason: pendingReason,
+        status: function (meta) { return statuses[meta.status]; },
+        fieldMeta: function (relic, key) { return relic.fields[key] || {}; }
+      };
+    })();
+
+    /* ---------------- Store（统一状态） ---------------- */
+    var desktopExhibit = window.matchMedia('(min-width: 961px) and (hover: hover) and (pointer: fine)');
+    var Store = (function () {
+      var state = {
+        page: 'explore',          // explore | immersive | culture | interactive3d
+        mode: 'display',          // display | interpretation | history | experience
+        relicId: 'bronze-mask',
+        autoRotate: true,
+        immersiveMode: 'solid',
+        fullscreen: false,
+      };
+      var listeners = [];
+      function emit() { listeners.forEach(function (fn) { fn(state); }); }
+      return {
+        get: function () { return state; },
+        setImmersiveMode: function (mode) {
+          if (state.page !== 'immersive' || (mode !== 'solid' &&
+              (mode !== 'cloud' || !desktopExhibit.matches || typeof ExhibitPointCloud === 'undefined'))) return false;
+          if (state.immersiveMode!==mode) { state.immersiveMode=mode; emit(); }
+          return true;
+        },
+        on: function (fn) { listeners.push(fn); },
+        setPage: function (page) {
+          state.page = page;
+          state.mode = page === 'interactive3d' ? 'interpretation' : 'display'; // 切顶部页面 → 底部模式复位
+          state.immersiveMode = 'solid';
+          emit();
+        },
+        setMode: function (mode) { state.mode = mode; emit(); },  // 切底部模式不动顶部页面
+        set: function (patch) {
+          if (patch.relicId && patch.relicId !== state.relicId) state.immersiveMode = 'solid';
+          for (var k in patch) state[k] = patch[k];
+          emit();
+        }
+      };
+    })();
+
+    /* ---------------- BaiduAdapter（桩接口，第一阶段不接真实 API） ---------------- */
+    var BaiduAdapter = {
+      // 后续接入百度智能体平台时在此实现；当前所有方法均为无副作用桩。
+      init: function (/* config */) { return Promise.resolve({ ok: false, stub: true, message: 'BaiduAdapter 未接入（Phase 1 桩）' }); },
+      chat: function (/* message */) { return Promise.resolve({ ok: false, stub: true, message: '智能问答待接入' }); },
+      searchRelic: function (/* keyword */) { return Promise.resolve({ ok: false, stub: true, results: [] }); }
+    };
+    BaiduAdapter.init();
+
+    /* ---------------- 工具 ---------------- */
+    function $(id) { return document.getElementById(id); }
+    var toastTimer = null;
+    function toast(msg) {
+      var t = $('toast'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2400);
+    }
+    function isMobile() { return window.matchMedia('(max-width: 960px)').matches; }
+    function toggleFullscreen() {
+      /* 第四阶段复核：全屏在受限容器中可能被拒绝，捕获 Promise 失败并给出提示，不留未处理报错 */
+      try {
+        if (document.fullscreenElement) {
+          var px = document.exitFullscreen();
+          if (px && px.catch) px.catch(function () { toast('退出全屏受限，请按 Esc 退出'); });
+        } else if (document.documentElement.requestFullscreen) {
+          var pr = document.documentElement.requestFullscreen();
+          if (pr && pr.catch) pr.catch(function () { toast('全屏在此环境受限，请在浏览器中打开后重试'); });
+        } else {
+          toast('当前环境不支持全屏');
+        }
+      } catch (e) { toast('全屏在此环境受限，请在浏览器中打开后重试'); }
+    }
+    document.addEventListener('fullscreenchange', function () {
+      Store.set({ fullscreen: !!document.fullscreenElement });
+    });
+
+    /* GLTFLoader 保留原始网格、材质与贴图。展台定位仅变换外层组。 */
+    var ModelLoader = {
+      loadGLB: async function (relic, signal) {
+        if (!THREE.GLTFLoader) throw new Error('GLTFLoader 初始化失败');
+        var url = new URL(relic.model.url, document.baseURI);
+        var response = await fetch(url, { signal: signal });
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' · ' + url.pathname);
+        var bytes = await response.arrayBuffer();
+        var header = new DataView(bytes);
+        if (bytes.byteLength < 20 || header.getUint32(0, true) !== 0x46546c67 ||
+            header.getUint32(4, true) !== 2 || header.getUint32(8, true) !== bytes.byteLength) {
+          throw new Error('GLB 文件格式错误或下载不完整 · ' + url.pathname);
+        }
+        var pointSourceHash;
+        if (window.crypto && window.crypto.subtle) {
+          var digest = await window.crypto.subtle.digest('SHA-256', bytes);
+          pointSourceHash = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2,'0')).join('');
+        }
+        signal.throwIfAborted();
+        return new Promise(function (resolve, reject) {
+          new THREE.GLTFLoader().parse(bytes, new URL('.', url).href, function (gltf) {
+            gltf.scene.userData.pointSourceHash = pointSourceHash;
+            resolve(gltf);
+          }, reject);
+        });
+      },
+      prepare: function (root, relic) {
+        var oriented = new THREE.Group();
+        oriented.rotation.fromArray(relic.model.rotation || [0, 0, 0]);
+        oriented.add(root);
+        var box = new THREE.Box3().setFromObject(oriented);
+        var size = box.getSize(new THREE.Vector3());
+        var longest = Math.max(size.x, size.y, size.z);
+        if (!Number.isFinite(longest) || longest <= 0) throw new Error('模型没有有效的几何尺寸');
+        var center = box.getCenter(new THREE.Vector3());
+        var group = new THREE.Group();
+        oriented.position.sub(center);
+        group.add(oriented);
+        group.updateMatrixWorld(true);
+        var meshes = [];
+        root.traverse(function (part) {
+          if (!part.isMesh) return;
+          meshes.push(part);
+          part.castShadow = true;
+          part.receiveShadow = true;
+        });
+        var ray = new THREE.Raycaster();
+        function anchorAt(surface) {
+          ray.set(new THREE.Vector3((surface[0] - 0.5) * size.x,
+            (surface[1] - 0.5) * size.y, size.z), new THREE.Vector3(0, 0, -1));
+          var hit = ray.intersectObjects(meshes, false)[0];
+          if (!hit) return null;
+          hit.point.z += longest * 0.008;
+          return hit.point;
+        }
+        var anchors = (relic.hotspots || []).map(function (hotspot) {
+          return hotspot.local ? new THREE.Vector3().fromArray(hotspot.local) : anchorAt(hotspot.surface);
+        });
+        var studyAnchors = relic.id === 'bronze-mask' ? [
+          [.64,.54], [.67,.67], [.5,.44], [.88,.51], [.55,.09]
+        ].map(anchorAt) : anchors;
+        // 按深度分箱提取底部轮廓，计算俯仰后的接触高度。
+        var support = new Array(128), point = new THREE.Vector3();
+        meshes.forEach(function (mesh) {
+          var vertices = mesh.geometry.attributes.position;
+          for (var i=0; i<vertices.count; i++) {
+            point.fromBufferAttribute(vertices,i).applyMatrix4(mesh.matrixWorld);
+            var bin = THREE.MathUtils.clamp(Math.floor((point.z/Math.max(size.z,1e-8)+.5)*128),0,127);
+            if (!support[bin] || point.y < support[bin].y) support[bin] = point.clone();
+          }
+        });
+        return { support:support.filter(Boolean), group: group, oriented: oriented, root: root, height: size.y, scale: relic.model.displaySize / longest, anchors: anchors, studyAnchors: studyAnchors };
+      },
+      dispose: function (root) {
+        var resources = new Set();
+        var images = new Set();
+        root.traverse(function (part) {
+          if (part.geometry) resources.add(part.geometry);
+          if (!part.material) return;
+          [].concat(part.material).forEach(function (material) {
+            resources.add(material);
+            Object.values(material).forEach(function (value) {
+              if (!value || !value.isTexture) return;
+              resources.add(value);
+              if (value.image && typeof value.image.close === 'function') images.add(value.image);
+            });
+          });
+        });
+        resources.forEach(function (resource) { resource.dispose(); });
+        images.forEach(function (image) { image.close(); });
+      }
+    };
+
+    /* ---------------- 展台环境 ---------------- */
+    function makeEnvTexture() {
+      var faces = [];
+      for (var i = 0; i < 6; i++) {
+        var c = document.createElement('canvas'); c.width = c.height = 128;
+        var ctx = c.getContext('2d');
+        var grad = ctx.createLinearGradient(0, 0, 0, 128);
+        grad.addColorStop(0, '#3d5c4c'); grad.addColorStop(0.55, '#101f19'); grad.addColorStop(1, '#050a08');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
+        /* 暖金光斑（模拟左上主光）与冷青光斑（模拟右侧光） */
+        var warm = ctx.createRadialGradient(30 + i * 8, 26, 4, 30 + i * 8, 26, 62);
+        warm.addColorStop(0, 'rgba(255,214,140,0.95)'); warm.addColorStop(1, 'rgba(255,214,140,0)');
+        ctx.fillStyle = warm; ctx.fillRect(0, 0, 128, 128);
+        var cool = ctx.createRadialGradient(104, 60, 4, 104, 60, 54);
+        cool.addColorStop(0, 'rgba(110,220,200,0.55)'); cool.addColorStop(1, 'rgba(110,220,200,0)');
+        ctx.fillStyle = cool; ctx.fillRect(0, 0, 128, 128);
+        var tex = c; /* CubeTexture 的 images 应为 canvas 元素本身 */
+        faces.push(tex);
+      }
+      var cube = new THREE.CubeTexture(faces);
+      cube.needsUpdate = true;
+      return cube;
+    }
+
+    /* 面具样板的盘面：中央素面，外圈成对折纹；纹理固定在台面 UV 上。 */
+    function makeBronzeTabletop() {
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1024;
+      var ctx = canvas.getContext('2d');
+      ctx.translate(512, 512);
+      var patina = ctx.createLinearGradient(-420,-380,400,400);
+      patina.addColorStop(0,'#49554d');
+      patina.addColorStop(.5,'#343f39');
+      patina.addColorStop(1,'#222e2a');
+      ctx.fillStyle = patina;
+      ctx.fillRect(-512,-512,1024,1024);
+      var seed = 31;
+      function grain() { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; }
+      for (var i = 0; i < 35000; i++) {
+        ctx.fillStyle = grain() < .5 ? 'rgba(183,163,121,.13)' : 'rgba(13,27,22,.19)';
+        ctx.fillRect(grain()*1024-512, grain()*1024-512, 1+grain()*4, 2);
+      }
+      [358,448,491].forEach(function (radius) {
+        ctx.beginPath(); ctx.arc(0,0,radius,0,2*Math.PI);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#736d55'; ctx.stroke();
+      });
+      for (var j = 0; j < 32; j++) {
+        ctx.save(); ctx.rotate(j*Math.PI/16); ctx.translate(0,-400);
+        for (var k = 0; k < 2; k++) {
+          ctx.scale(-1,1);
+          ctx.beginPath(); ctx.moveTo(2,32); ctx.lineTo(2,-32); ctx.lineTo(30,-32);
+          ctx.lineTo(30,13); ctx.lineTo(13,13); ctx.lineTo(13,-16); ctx.lineTo(21,-16);
+          ctx.lineWidth = 2.5; ctx.strokeStyle = '#746f58'; ctx.stroke();
+        }
+        ctx.restore();
+      }
+      var texture = new THREE.CanvasTexture(canvas);
+      texture.encoding = THREE.sRGBEncoding;
+      return texture;
+    }
+    function buildBronzeTable(stage, edge) {
+      var bronze = new THREE.MeshStandardMaterial({color:0x2e3933,metalness:.56,roughness:.59,envMapIntensity:.24});
+      var recess = new THREE.MeshStandardMaterial({color:0x202b28,metalness:.4,roughness:.7,envMapIntensity:.16});
+      bronze.color.convertSRGBToLinear(); recess.color.convertSRGBToLinear();
+      // 从内收的底足到上缘逐段车削轮廓，窄金属切面共享边界。
+      var profile = [[1.82,-2.36],[1.96,-2.345],[2,-2.32],[2,-2.25],[1.98,-2.235],[1.94,-2.222]];
+      var bands = [recess,recess,bronze,edge,bronze];
+      for (var i = 0; i < bands.length; i++) {
+        var strip = new THREE.LatheGeometry(profile.slice(i,i+2).map(function (p) {
+          return new THREE.Vector2(p[0],p[1]);
+        }),128);
+        var wall = new THREE.Mesh(strip,bands[i]); wall.receiveShadow = true; stage.add(wall);
+      }
+      var face = new THREE.Mesh(new THREE.CircleGeometry(1.94,128), new THREE.MeshStandardMaterial({
+        map:makeBronzeTabletop(),metalness:.38,roughness:.61,envMapIntensity:.24
+      }));
+      face.rotation.x = -Math.PI/2;
+      face.position.y = stage.userData.topY = -2.222;
+      face.receiveShadow = true; stage.add(face);
+    }
+    function buildExhibitionStage() {
+      var stage = new THREE.Group();
+      var edge = new THREE.MeshStandardMaterial({color:0x9a7848,metalness:0.72,roughness:0.48});
+      edge.color.convertSRGBToLinear(); edge.envMapIntensity=0.35;
+      buildBronzeTable(stage,edge);
+      /* 软接触阴影落在背景地面方向，边缘完全透明，避免画布边框。 */
+      var contactCanvas=document.createElement('canvas');
+      contactCanvas.width=contactCanvas.height=256;
+      var contactContext=contactCanvas.getContext('2d');
+      var contactFade=contactContext.createRadialGradient(128,128,35,128,128,127);
+      contactFade.addColorStop(0,'rgba(0,0,0,.78)');
+      contactFade.addColorStop(.57,'rgba(0,0,0,.58)');
+      contactFade.addColorStop(.83,'rgba(0,0,0,.22)');
+      contactFade.addColorStop(1,'rgba(0,0,0,0)');
+      contactContext.fillStyle=contactFade;contactContext.fillRect(0,0,256,256);
+      var contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(6,6),
+        new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(contactCanvas),transparent:true,
+          depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
+      contactShadow.rotation.x=-Math.PI/2;
+      contactShadow.position.set(0,-2.37,-.12);
+      contactShadow.renderOrder=1;
+      stage.add(contactShadow);
+      var fadeCanvas=document.createElement('canvas');
+      fadeCanvas.width=fadeCanvas.height=256;
+      var fadeContext=fadeCanvas.getContext('2d');
+      var fade=fadeContext.createRadialGradient(128,128,28,128,128,125);
+      fade.addColorStop(0,'#fff');fade.addColorStop(0.45,'#aaa');fade.addColorStop(1,'#000');
+      fadeContext.fillStyle=fade;fadeContext.fillRect(0,0,256,256);
+      var floorMaterial=new THREE.MeshStandardMaterial({color:0x071b1a,roughness:0.95,metalness:0,envMapIntensity:0.05,
+        transparent:true,opacity:0.16,alphaMap:new THREE.CanvasTexture(fadeCanvas),depthWrite:false});
+      floorMaterial.color.convertSRGBToLinear();
+      var floor=new THREE.Mesh(new THREE.PlaneGeometry(7,7),floorMaterial);
+      floor.rotation.x=-Math.PI/2;floor.position.y=-2.375;floor.receiveShadow=true;stage.add(floor);
+      return stage;
+    }
+
+    /* ---------------- PerformanceGuard 性能守护 ---------------- */
+    var PerformanceGuard = (function () {
+      var frames = 0, lastCheck = performance.now();
+      var lowSeconds = 0, highSeconds = 0, step = 0; // step: 0 正常 / 1 分辨率 .75 / 2 分辨率 .5
+      var onFps = null;
+      return {
+        init: function (cb) { onFps = cb; },
+        tick: function () {
+          frames++;
+          var now = performance.now();
+          if (now - lastCheck >= 2000) {
+            var fps = Math.round(frames * 1000 / (now - lastCheck));
+            frames = 0; lastCheck = now;
+            if (onFps) onFps(fps);
+            if (fps < 30) { lowSeconds += 2; highSeconds = 0; } else lowSeconds = 0;
+            if (fps > 55) { highSeconds += 2; lowSeconds = 0; } else highSeconds = 0;
+            if (lowSeconds >= 2 && step < 2) {          // 低于 30fps 持续 2 秒 → 降级
+              step++;
+              SceneManager.setResolutionScale(step === 1 ? 0.75 : 0.5);
+              lowSeconds = 0;
+            } else if (highSeconds >= 6 && step > 0) {  // 高于 55fps 持续约 5 秒以上 → 恢复
+              step--;
+              SceneManager.setResolutionScale(step === 0 ? 1 : 0.75);
+              highSeconds = 0;
+            }
+          }
+        }
+      };
+    })();
+
+    /* ---------------- SceneManager 场景管理 ---------------- */
+    var hallExhibits = {
+      'bronze-mask': {english:"BRONZE MASK", copy:"宽阔的双耳向两侧舒展，眉弓与眼眶在面部交汇。转动面具，观察鼻梁凸起的深度，以及两侧耳缘与正面之间的折角。", pose:[1.2,1.01,-0.14], height:4.5, width:5.4, target:-0.84, lightX:2.9, power:2.65, exposure:0.87},
+      'bronze-tree': {english:"BRONZE SACRED TREE", copy:"沿着底座向上看，细长的树干托起层层枝杈。枝条先伸出，再向下弯垂；缓缓转动神树，可以分辨正面相互重叠的枝梢。", pose:[1.02,0.99,0.12], height:4.36, width:2.9, target:-0.41, lightX:3.5, power:3.15, exposure:0.91},
+      'bronze-standing': {english:"BRONZE STANDING FIGURE", copy:"青铜立人像是三星堆青铜人物造像的代表。立人头戴高冠，双手一高一低，环握于身前。从衣襟的纹饰向下看，长衣下露出双足，稳立于饰纹方座之上。", pose:[1.042,1,-0.12], height:4.28, width:2.5, target:-0.42, lightX:2.7, power:2.55, exposure:0.83},
+      'bronze-zongmu': {english:"BRONZE PROTRUDING-EYE MASK", copy:"双眼向前突出，双耳向外伸展，构成纵目面具鲜明的轮廓。从斜侧面看，眼柱与面部之间的距离比正面更容易辨认。", pose:[1.35,1.01,-0.12], height:4.38, width:5.40, target:-0.93, lightX:3.8, power:2.85, exposure:0.86},
+      'gold-mask': {english:"GOLD MASK", copy:"光线沿金色面具的眉脊、鼻梁和唇缘移动，勾出起伏的面部。轻轻转动角度，对比额部较宽的亮面与眼眶内侧的阴影。", pose:[1.31,1.02,0.03], height:4.45, width:5.28, target:-0.91, lightX:2, power:2.05, exposure:0.78},
+      'bronze-head': {english:"BRONZE HUMAN HEAD", copy:"从高耸的头顶沿着眉眼向下看，下颌与长颈连成清晰的纵向轮廓。侧转人头像，可以对照耳廓、鼻梁与颈部的前后关系。", pose:[1.09,1.035,-0.04], height:4.52, width:3.8, target:-0.44, lightX:3.1, power:2.7, exposure:0.85},
+      'bronze-bird-bell': {english:"BRONZE BIRD-SHAPED BELL", copy:"鸟喙、羽冠与上翘的尾羽勾出鸟形铃的侧面。顺着鸟身的纹饰向下看，下方铃体与上方鸟形形成一疏一密的轮廓。", pose:[1.05,1.02,0.1], height:4.46, width:3.9, target:-0.55, lightX:3.35, power:2.85, exposure:0.86},
+      'jade-zhang': {english:"JADE ZHANG", copy:"玉璋器身修长，宽面、穿孔和两侧的齿状装饰清晰可见。从宽面转向侧缘，器身的厚薄与轮廓随观察角度逐渐显现。", pose:[1.01,0.995,0.14], height:4.35, width:2.7, target:-0.4, lightX:1.8, power:2.05, exposure:0.77}
+    };
+    var SceneManager = (function () {
+      var renderer, scene, camera, controls, model = null;
+      var activeLoad = null;
+      var exhibitCloud = null, cloudLoad = null;
+      var exhibitionStage, exhibitionLight, homePresentation = null;
+      var fixedStage = false;
+      var hallExhibit=null, hallShadow=null;
+      var raf = null, running = false, resScale = 1, framedImmersive = null;
+      var clockStart = performance.now();
+
+      // 等比展示倍率、取景距离系数、初始偏航。
+      var profiles = {
+        'bronze-mask':[1.29,1,0], 'bronze-tree':[1.10,1.03,-.12],
+        'bronze-standing':[1.11,1.035,.10], 'bronze-zongmu':[1.27,1.015,-.20],
+        'gold-mask':[1.31,.99,.04], 'bronze-head':[1.12,1.015,-.09],
+        'bronze-bird-bell':[1.09,.985,.17], 'jade-zhang':[1.08,1.005,.11]
+      };
+      var profile=null, yaw=0, pitch=0, magnification=1, dragging=null, spin=false, lastFrame=0;
+      function resetExhibit() {
+        yaw=profile ? profile[2] : 0; pitch=0; magnification=1; dragging=null;
+        placeModel(homePresentation);
+      }
+      function setCloudStatus(message) {
+        var status = $('hallCloudStatus');
+        status.textContent = message;
+        status.hidden = !message;
+      }
+      function cancelCloudLoad() {
+        if (cloudLoad) cloudLoad.abort();
+        cloudLoad = null;
+      }
+      function clearExhibitCloud() {
+        cancelCloudLoad();
+        if (exhibitCloud) exhibitCloud.dispose();
+        exhibitCloud = null;
+        if (hallShadow) hallShadow.material.opacity = hallShadow.userData.strength;
+        setCloudStatus('');
+      }
+      async function syncExhibitCloud() {
+        var state = Store.get();
+        if (!document.body.dataset.hallItem) {
+          clearExhibitCloud();
+          return;
+        }
+        if (exhibitCloud) {
+          exhibitCloud.setMode(state.immersiveMode);
+          return;
+        }
+        if (state.immersiveMode !== 'cloud') {
+          if (cloudLoad) {
+            cancelCloudLoad();
+            setCloudStatus('');
+          }
+          return;
+        }
+        if (!model || cloudLoad) return;
+        var request = new AbortController();
+        cloudLoad = request;
+        setCloudStatus('正在加载点云…');
+        try {
+          var cloud = await ExhibitPointCloud.create(model, state.relicId, request.signal);
+          if (request.signal.aborted) {
+            cloud.dispose();
+            return;
+          }
+          exhibitCloud = cloud;
+          cloud.setMode('cloud');
+          setCloudStatus('');
+        } catch (error) {
+          if (!request.signal.aborted) {
+            cloudLoad = null;
+            Store.setImmersiveMode('solid');
+            setCloudStatus('点云加载失败，可点击「点云展示」重试。');
+            console.error(error);
+          }
+        } finally {
+          if (cloudLoad === request) cloudLoad = null;
+        }
+      }
+      function bindExhibitInput(canvas) {
+        canvas.addEventListener('pointerdown',function(e){
+          if (!profile || !e.isPrimary || e.button!==0) return;
+          dragging={id:e.pointerId,x:e.clientX,y:e.clientY}; canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener('pointermove',function(e){
+          if (!dragging || dragging.id!==e.pointerId) return;
+          yaw+=(e.clientX-dragging.x)*.009;
+          pitch=THREE.MathUtils.clamp(pitch+(e.clientY-dragging.y)*.005,-.21,.21);
+          dragging.x=e.clientX; dragging.y=e.clientY; placeModel(true);
+        });
+        canvas.addEventListener('lostpointercapture',function(){dragging=null;});
+        canvas.addEventListener('wheel',function(e){
+          if (!profile) return;
+          e.preventDefault(); SceneManager.zoomBy(Math.exp(THREE.MathUtils.clamp(e.deltaY,-160,160)*.0015));
+        },{passive:false});
+        $('resetExhibit').addEventListener('click',resetExhibit);
+      }
+      function basePixelRatio() {
+        var cap = isMobile() ? 1.5 : 2;
+        return Math.min(window.devicePixelRatio || 1, cap);
+      }
+      function resize() {
+        var el = $('gl');
+        var w = el.clientWidth, h = el.clientHeight;
+        if (!w || !h) return;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        if (fixedStage) {
+          // 窄中栏按横向安全距退镜，模型交互保持镜头固定。
+          var span = hallExhibit ? Math.max(hallExhibit.height,hallExhibit.width/camera.aspect) : Math.max(5.85,6.2/camera.aspect);
+          var distance = profile[1]*span/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
+          var offset = camera.position.clone().sub(controls.target);
+          offset.setLength(distance);
+          camera.position.copy(controls.target).add(offset);
+          controls.minDistance = distance*.65;
+          controls.maxDistance = distance*1.55;
+        }
+        camera.updateProjectionMatrix();
+      }
+      function loop() {
+        if (!running) return;
+        raf = requestAnimationFrame(loop);
+        var t = (performance.now() - clockStart) / 1000;
+        if (profile) {
+          if (model && spin && !dragging) { yaw+=Math.min(t-lastFrame,.05)*.16; model.group.rotation.y=yaw; }
+        } else controls.update();
+        lastFrame=t;
+
+        if (exhibitCloud) hallShadow.material.opacity = hallShadow.userData.strength * (1 - exhibitCloud.update(renderer.getPixelRatio()));
+        renderer.render(scene, camera);
+        PerformanceGuard.tick();
+        Features.Interpretation.updateHotspots(camera, model);
+      }
+      function placeModel(explore) {
+        if (!model) return;
+        var scale = model.scale * (profile ? profile[0]*magnification : explore ? 1 : 0.9);
+        var surface = exhibitionStage.userData.topY;
+        model.group.scale.setScalar(scale);
+        model.group.rotation.set(profile ? pitch : 0,profile ? yaw : 0,0,'YXZ');
+        var lowest=-model.height/2;
+        if (profile && pitch) {
+          var c=Math.cos(pitch), s=Math.sin(pitch);
+          lowest=model.support.reduce(function(min,p){return Math.min(min,p.y*c-p.z*s);},Infinity);
+        }
+        model.group.position.y = surface - lowest*scale + .002;
+        if (hallExhibit) {
+          // 保留正向放大及俯仰时的冠顶余量，同步平移相机和取景目标。
+          var targetY=hallExhibit.target + Math.max(0,magnification-1)*2 + Math.abs(pitch)*.36;
+          camera.position.y+=targetY-controls.target.y;
+          controls.target.y=targetY;
+        }
+      }
+
+      return {
+        init: function () {
+          if (typeof THREE === 'undefined') { $('glFallback').style.display = 'flex'; return false; }
+          var el = $('gl');
+          try {
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+          } catch (error) {
+            $('glFallback').textContent = '当前浏览器无法启动 WebGL，请启用图形加速后刷新。';
+            $('glFallback').style.display = 'flex';
+            console.error('WebGL initialization failed:', error);
+            return false;
+          }
+           renderer.setClearColor(0x000000, 0);
+          renderer.setPixelRatio(basePixelRatio());
+          renderer.setSize(el.clientWidth, el.clientHeight);
+          el.appendChild(renderer.domElement);
+
+          scene = new THREE.Scene();
+           scene.fog = new THREE.FogExp2(0x102b29, 0.011);
+          scene.environment = makeEnvTexture();
+          camera = new THREE.PerspectiveCamera(42, el.clientWidth / el.clientHeight, 0.1, 100);
+          camera.position.set(3.2, 0.7, 8.4);
+
+          /* 灯光：暖金主光（左上）/ 冷青侧光（右）/ 顶部补光 / 正面柔光 */
+          var key = new THREE.DirectionalLight(0xffd9a0, 1.35); key.position.set(-5, 6, 4); scene.add(key);
+          var side = new THREE.DirectionalLight(0x3fae9f, 0.8); side.position.set(6, 1.5, 2.5); scene.add(side);
+          var top = new THREE.PointLight(0xfff1d6, 0.55, 30); top.position.set(0, 7, 2); scene.add(top);
+          var front = new THREE.DirectionalLight(0xffe9c4, 0.5); front.position.set(1.5, 1.6, 8); scene.add(front);
+          var hemisphere = new THREE.HemisphereLight(0x8fae9c, 0x1a1206, 0.4); scene.add(hemisphere);
+          var ambient = new THREE.AmbientLight(0x2a3f36, 0.7); scene.add(ambient);
+          var under = new THREE.PointLight(0xd4af5a, 0.5, 9); under.position.set(0, -1.4, 0); scene.add(under);
+
+          exhibitionStage = buildExhibitionStage();
+          exhibitionStage.visible = false;
+          scene.add(exhibitionStage);
+           exhibitionLight = new THREE.SpotLight(0xffe2bd, 1.5, 30, Math.PI / 5, 0.75, 1);
+          exhibitionLight.position.set(-3, 9, 2);
+          exhibitionLight.target.position.set(0, -0.4, 0);
+          exhibitionLight.castShadow = true;
+           exhibitionLight.shadow.mapSize.set(1024, 1024);
+          exhibitionLight.shadow.bias = -0.0005;
+          exhibitionLight.shadow.normalBias = 0.02;
+           exhibitionLight.shadow.radius = 3;
+          scene.add(exhibitionLight, exhibitionLight.target);
+           scene.userData.originalLights = [key, side, top, front, under, hemisphere, ambient].map(function (light) {
+            return {light:light,intensity:light.intensity};
+          });
+
+          controls = new THREE.OrbitControls(camera, renderer.domElement);
+          controls.target.set(0, -0.45, 0);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.06;
+          controls.minDistance = 3.2;
+          controls.maxDistance = 13;
+          controls.minPolarAngle = 0.15;
+          controls.maxPolarAngle = Math.PI - 0.35;
+          controls.autoRotate = Store.get().autoRotate;
+          controls.autoRotateSpeed = 1.1;
+
+          bindExhibitInput(renderer.domElement);
+          window.addEventListener('resize', resize);
+
+          /* 布局修复关键：页面/模式切换会改变展示区尺寸（沉浸=整行、
+             探索=中栏、文化=隐藏），仅靠 window resize 事件画布会沿用
+             旧尺寸——这正是沉浸页模型偏左、右侧留白的根源。
+             用 ResizeObserver 监听展示区与画布容器，尺寸一变立即重算。 */
+          if (window.ResizeObserver) {
+            var ro = new ResizeObserver(function () { resize(); });
+            ro.observe(el);
+            ro.observe($('viewer'));
+          }
+
+          running = true;
+          loop();
+          return true;
+        },
+        showRelic: async function (relic) {
+          if (!scene) return;
+          if (activeLoad) activeLoad.abort();
+          clearExhibitCloud();
+          if (model) {
+            scene.remove(model.group);
+            ModelLoader.dispose(model.root);
+            model = null;
+          }
+          var status = $('glFallback');
+          status.style.display = 'flex';
+          if (location.protocol === 'file:') {
+            status.textContent = '请运行 start-museum.cmd，通过本地 HTTP 地址查看 3D 文物。';
+            return;
+          }
+          status.textContent = '正在加载 3D 文物…';
+          var request = new AbortController();
+          activeLoad = request;
+          var root;
+          try {
+            root = (await ModelLoader.loadGLB(relic, request.signal)).scene;
+            if (request.signal.aborted) {
+              ModelLoader.dispose(root);
+              return;
+            }
+            model = ModelLoader.prepare(root, relic);
+            placeModel(homePresentation);
+            scene.add(model.group);
+            status.style.display = 'none';
+            syncExhibitCloud();
+          } catch (error) {
+            if (root) ModelLoader.dispose(root);
+            if (request.signal.aborted) return;
+            model = null;
+            status.textContent = '3D 文物加载失败：' + error.message + '。';
+            var retry=document.createElement('button');
+            retry.textContent='重新加载'; retry.onclick=function(){SceneManager.showRelic(relic);};
+            status.appendChild(retry);
+            console.error('GLB load failed:', relic.id, error);
+          } finally {
+            if (activeLoad === request) activeLoad = null;
+          }
+        },
+        available: function () { return !!renderer; },
+        canRetry: function () { return !!scene && !model && !activeLoad; },
+        syncExhibitCloud: syncExhibitCloud,
+        pause: function () { running = false; if (raf) cancelAnimationFrame(raf); },
+        resume: function () { if (!running && renderer) { running = true; loop(); } },
+        setAutoRotate: function (on) { spin=on; if (controls) controls.autoRotate = on && !profile; },
+        zoomBy: function (factor) {
+          if (!controls) return;
+          if (profile) {
+            var tall = model && model.height*model.scale*profile[0] > 3.8;
+            var maxScale=hallExhibit ? 1.05 : tall ? 1.08 : 1.15;
+            magnification=THREE.MathUtils.clamp(magnification/factor,.65,maxScale);
+            placeModel(true); return;
+          }
+          var dir = camera.position.clone().sub(controls.target);
+          var len = THREE.MathUtils.clamp(dir.length() * factor, controls.minDistance, controls.maxDistance);
+          dir.setLength(len);
+          camera.position.copy(controls.target).add(dir);
+        },
+        setResolutionScale: function (s) {
+          resScale = s;
+          if (renderer) renderer.setPixelRatio(basePixelRatio() * s);
+        },
+        handleResize: function () { if (renderer) resize(); },
+        setExplorePresentation: function (on) {
+          var shared = desktopExhibit.matches && (on || Store.get().page==='interactive3d');
+          var hall = document.body.dataset.hall === 'entity';
+          hallExhibit = hall ? hallExhibits[Store.get().relicId] : null;
+          var next = hall ? hallExhibit.pose : shared ? profiles[Store.get().relicId] : null;
+          var sample = !!next;
+          if (!exhibitionStage || (homePresentation === on && profile === next)) return;
+          var frameChanged = profile !== next;
+          profile=next;
+          controls.enabled=!sample;
+          controls.maxPolarAngle = on || sample ? Math.PI/2 : Math.PI-.35;
+          $('resetExhibit').style.display=sample ? '' : 'none';
+          fixedStage = sample;
+          homePresentation = on;
+          resetExhibit();
+          exhibitionStage.visible = on && !hall;
+          if (hall && !hallShadow) {
+            hallShadow = new THREE.Mesh(new THREE.PlaneGeometry(12,12),new THREE.ShadowMaterial({opacity:.34,depthWrite:false}));
+            hallShadow.rotation.x=-Math.PI/2;
+            hallShadow.receiveShadow=true; scene.add(hallShadow);
+          }
+          if (hall) {
+            // 悬挂面具的投影落向展厅地面，立式器物维持底部接触。
+            var suspended = ['bronze-mask','bronze-zongmu','gold-mask'].includes(Store.get().relicId);
+            hallShadow.position.y = exhibitionStage.userData.topY - (suspended ? .75 : 0);
+            hallShadow.userData.strength = suspended ? .10 : .34;
+            hallShadow.material.opacity = hallShadow.userData.strength;
+          }
+          if (hallShadow) hallShadow.visible=hall;
+          exhibitionLight.visible = (on || sample);
+          exhibitionLight.intensity = sample ? 2.25 : 1.85;
+          exhibitionLight.position.set(sample ? -4.6 : -3.6, sample ? 5.4 : 7, sample ? 3.2 : 3);
+          if (hall) { exhibitionLight.position.set(hallExhibit.lightX,6,3.5); exhibitionLight.intensity=hallExhibit.power; }
+          renderer.shadowMap.enabled = (on || sample);
+          renderer.shadowMap.type = THREE.PCFShadowMap;
+          renderer.outputEncoding = (on || sample) ? THREE.sRGBEncoding : THREE.LinearEncoding;
+          renderer.toneMapping = (on || sample) ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
+           renderer.toneMappingExposure = hall ? hallExhibit.exposure : sample ? .93 : on ? 0.83 : 0.8;
+           scene.fog.density = (on || sample) ? 0.025 : 0.011;
+          scene.userData.originalLights.forEach(function (entry, index) {
+             entry.light.intensity = hall ? [.46,.36,.21,.18,.02,.20,.11][index] : sample ? [.57,.38,.14,.18,.02,.29,.15][index] :
+               on ? [0.62,0.3,0.18,0.16,0.11,0.16,0.14][index] : entry.intensity;
+          });
+          if (frameChanged) {
+            camera.fov = sample ? 31 : 42;
+            controls.minPolarAngle = sample ? Math.PI/4 : .15;
+
+            controls.minDistance = 3.2; controls.maxDistance = 13;
+            framedImmersive = null;
+            this.frameForLayout(document.body.dataset.layout);
+          }
+        },
+        /* 按布局取景：沉浸展厅把相机拉正、居中对准模型与展台；
+           回到探索/面板布局恢复原视角。只在布局切换时触发，不打断用户操作。 */
+        frameForLayout: function (layout) {
+          if (!camera || !controls) return;
+          var imm = layout === 'immersive';
+          if (framedImmersive === imm) return;
+          framedImmersive = imm;
+          if (hallExhibit) {
+            controls.target.set(0,hallExhibit.target,0);
+            camera.position.set(1.35,-.06,8);
+          } else if (imm) {
+            camera.position.set(0.4, 0.9, 9.6);
+            controls.target.set(0, -0.5, 0);
+          } else if (fixedStage) {
+            controls.target.set(0,-.62,0);
+            camera.position.set(2.7,-.45,10);
+          } else {
+            camera.position.set(2.1, 0.12, 8.2);
+            controls.target.set(0, -0.82, 0);
+          }
+          resize();
+          camera.lookAt(controls.target);
+        },
+      };
+    })();
+
+    /* ================================================================
+       组件层
+       ================================================================ */
+    var ICONS = {
+      tree:   '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 22V9M12 9C12 5 9 4 6 4c0 3 2 5 6 5zm0 0c0-4 3-5 6-5 0 3-2 5-6 5zM8 22h8M9 16h6"/></svg>',
+      mask:   '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5c2-1.6 5-2 8-2s6 .4 8 2v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10z"/><path d="M7.5 10l3 1.2M16.5 10l-3 1.2M12 11v3M9 16.5h6"/></svg>',
+      figure: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="4" r="1.8"/><path d="M12 6v7M7 9l5-1 5 1M9 21l1.5-8h3L15 21"/></svg>',
+      head:   '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4h12v7a6 6 0 0 1-12 0z"/><path d="M9 21v-3.4M15 21v-3.4M6 4c0-1 2.7-2 6-2s6 1 6 2M9 10h.01M15 10h.01"/></svg>',
+      bell:   '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c3 2 5 5 5 9l2 4H5l2-4c0-4 2-7 5-9z"/><path d="M17 9c2-1 3.5-3 4-5-2 0-4 1-5 2M10 20a2 2 0 0 0 4 0"/></svg>',
+      zhang:  '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2h6v13l-3 7-3-7z"/><path d="M9 6h6"/></svg>'
+    };
+    var THUMBNAILS = {
+      'bronze-tree': '01-青铜神树.webp',
+      'bronze-mask': '02-青铜面具.webp',
+      'bronze-standing': '03-青铜立人像.webp',
+      'bronze-zongmu': '04-青铜纵目面具.webp',
+      'gold-mask': '05-黄金面具.webp',
+      'bronze-head': '06-青铜人头像.webp',
+      'bronze-bird-bell': '07-青铜鸟形铃.webp',
+      'jade-zhang': '08-玉璋.webp'
+    };
+    var CORNER_SVG = '<svg class="corner {cls}" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 60V22M4 38h18M4 22h26M22 22v14M38 4H22M22 4v18" transform="rotate(0)"/><path d="M60 4H22M44 4v16H28M60 20H48"/></svg>';
+
+    /* ---- TopBar ---- */
+    var PAGES = [
+      { id: 'explore', label: '文物探索' },
+      { id: 'immersive', label: '沉浸展览' },
+      { id: 'culture', label: '文化解读' },
+      { id: 'interactive3d', label: '3D互动' }
+    ];
+    function renderTopNav() {
+      var nav = $('topnav');
+      PAGES.forEach(function (p, index) {
+        var b = nav.children[index];
+        if (!b) {
+          b = document.createElement('button');
+          b.textContent = p.label;
+          b.addEventListener('click', function () { Store.setPage(p.id); });
+          nav.appendChild(b);
+        }
+        var active = Store.get().page === p.id;
+        b.classList.toggle('active', active);
+        if (active) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+      });
+    }
+
+    /* ---- RelicList ---- */
+    function renderRelicList(filter) {
+      var list = $('relicList');
+      list.innerHTML = '';
+      var q = (filter || '').trim();
+      var shown = 0;
+      DataService.all().forEach(function (relic) {
+        var name = DataService.field(relic, 'name');
+        if (q && name.indexOf(q) === -1) return;
+        shown++;
+        var item = document.createElement('button');
+        item.className = 'relic-item ' + (relic.available ? 'available' : 'locked') +
+          (Store.get().relicId === relic.id ? ' selected' : '');
+        item.setAttribute('aria-disabled', relic.available ? 'false' : 'true');
+        var inner =
+          '<span class="thumb" title="艺术化示意图，非馆藏照片">' +
+            '<img src="assets/relics/' + THUMBNAILS[relic.id] + '" alt="" loading="lazy" />' + '</span>' +
+          '<span class="rtext"><span class="rname">' + name + '</span>' +
+          '<span class="rsite" style="display:block">' + DataService.field(relic, 'siteShort') + '</span></span>';
+        if (relic.available) {
+          inner += '<svg class="rarrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>';
+          item.addEventListener('click', function () {
+            if (Store.get().relicId === relic.id) {
+              if (SceneManager.canRetry()) SceneManager.showRelic(relic);
+              return;
+            }
+            Store.set({ relicId: relic.id });
+            renderAll();
+          });
+        } else {
+          inner += '<span class="soon-tag">即将上线</span>';
+          item.addEventListener('click', function () { toast('「' + name + '」即将上线'); });
+        }
+        item.innerHTML = inner;
+        list.appendChild(item);
+      });
+      if (!shown) {
+        var empty = document.createElement('div');
+        empty.className = 'no-result';
+        empty.textContent = '未找到「' + q + '」';
+        list.appendChild(empty);
+      }
+      $('relicCount').textContent = '共 ' + DataService.count() + ' 件文物';
+    }
+
+    /* ---- InfoPanel ---- */
+    function sourceLinks(refs) {
+      return (refs || []).map(function (key) {
+        var source = museumCulture.sources[key];
+        return '<a href="' + source[1] + '" target="_blank" rel="noopener">' + source[0] + ' ↗</a>';
+      }).join('<br>');
+    }
+
+    function renderInfoPanel() {
+      var relic = DataService.get(Store.get().relicId);
+      var f = function (k) { return DataService.field(relic, k); };
+      var sizeMeta = DataService.fieldMeta(relic, 'size');
+      var panel = $('infoPanel');
+      panel.innerHTML =
+        CORNER_SVG.replace('{cls}', 'tl') + CORNER_SVG.replace('{cls}', 'tr') +
+        CORNER_SVG.replace('{cls}', 'bl') + CORNER_SVG.replace('{cls}', 'br') +
+        '<h1>' + f('name') + '</h1>' +
+        '<div class="info-sub">' + f('siteShort') + '</div>' +
+        '<dl class="spec">' +
+          '<dt>年代</dt><dd>' + (f('era') || '待核实') + '</dd>' +
+          '<dt>尺寸</dt><dd class="' + (sizeMeta.status === 'pending' ? 'pending' : '') + '">' + f('size') + '</dd>' +
+          '<dt>材质（类型）</dt><dd>' + (f('material') || '待核实') + '</dd>' +
+          '<dt>出土地点</dt><dd>' + (f('site') || f('siteShort')) + '</dd>' +
+        '</dl>' +
+        '<div class="home-info-copy">' +
+          ['intro', 'value'].filter(function (key) { return f(key); }).map(function (key) {
+            var meta = DataService.fieldMeta(relic, key);
+            return '<section><h3>' + (key === 'intro' ? '文物简介' : '历史价值') +
+              '<small>' + DataService.status(meta) + '</small></h3><p>' + meta.value + '</p></section>';
+          }).join('') + '</div>' +
+        '<button class="explore-btn" id="exploreBtn">深入探索　→</button>' +
+        '<button class="src-link" id="srcBtn">查看数据来源与核实状态</button>';
+      $('exploreBtn').addEventListener('click', function () { DetailModal.open(relic); });
+      $('srcBtn').addEventListener('click', function () { DetailModal.open(relic, true); });
+    }
+
+    /* ---- BottomNav ---- */
+    var MODES = [
+      { id: 'display', label: '文物展示', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>' },
+      { id: 'interpretation', label: '3D解读', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h13v14H4z"/><path d="M8 9h5M8 13h5"/></svg>' },
+      { id: 'history', label: '历史背景', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M20 20V10M2 20h20M12 4L3 9h18z"/><path d="M9 20v-6M15 20v-6"/></svg>' },
+      { id: 'experience', label: '互动体验', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9h12a4 4 0 0 1 4 4v3a3 3 0 0 1-5.4 1.7L14.5 15h-5l-2.1 2.7A3 3 0 0 1 2 16v-3a4 4 0 0 1 4-4z"/><path d="M7 12h.01M10 12h.01"/></svg>' }
+    ];
+    function renderBottomNav() {
+      var nav = $('bottomnav');
+      MODES.forEach(function (m, index) {
+        var b = nav.children[index];
+        if (!b) {
+          b = document.createElement('button');
+          b.innerHTML = m.icon + '<span>' + m.label + '</span>';
+          b.addEventListener('click', function () {
+            Store.setMode(m.id);
+            if (m.id === 'experience') {
+              $('traceSelect').focus({preventScroll:true});
+              $('tracePanel').scrollIntoView({block:'nearest'});
+            }
+          });
+          nav.appendChild(b);
+        }
+        var active = Store.get().mode === m.id;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-pressed', String(active));
+      });
+    }
+
+    /* ---- DetailModal（含 DATA_SOURCES 数据来源表） ---- */
+    var DetailModal = {
+      opener: null,
+      open: function (relic, toSources) {
+        $('modalTitle').textContent = DataService.field(relic, 'name') + ' · 深入探索';
+        $('modalSub').textContent = [DataService.field(relic, 'era'), DataService.field(relic, 'material'), DataService.field(relic, 'site') || DataService.field(relic, 'siteShort')].filter(Boolean).join(' · ');
+        var rows = '';
+        var labels = Object.assign({name:'名称'}, DataService.archive, {intro:'文物简介'}, DataService.topics);
+        Object.keys(labels).forEach(function (key) {
+          var meta = DataService.fieldMeta(relic, key);
+          var statusClass = meta.status === 'pending' ? 'st-pending' : 'st-ok';
+          rows += '<tr><th>' + labels[key] + '</th><td>' + meta.value + '</td><td>' +
+            (sourceLinks(meta.refs) || meta.source) + '</td><td class="' + statusClass + '">' +
+            DataService.status(meta) + (meta.verifiedAt ? '<br>' + meta.verifiedAt : '') + '</td></tr>';
+        });
+        $('modalBody').innerHTML = '<h3 id="srcAnchor">数据来源（DATA_SOURCES）</h3>' +
+          '<table class="src-table"><tr><th>字段</th><th>内容</th><th>来源</th><th>核实状态</th></tr>' + rows + '</table>';
+        DetailModal.opener = document.activeElement;
+        var mask = $('modalMask');
+        mask.classList.add('show');
+        mask.querySelector('.modal').scrollTop = 0;
+        $('app').inert = true;
+        $('modalClose').focus({preventScroll:true});
+        if (toSources) $('srcAnchor').scrollIntoView({block:'nearest'});
+      },
+      close: function () {
+        if (!$('modalMask').classList.contains('show')) return;
+        $('modalMask').classList.remove('show');
+        $('app').inert = false;
+        if (DetailModal.opener) DetailModal.opener.focus({preventScroll:true});
+        DetailModal.opener = null;
+      },
+      handleKey: function (event) {
+        var mask = $('modalMask');
+        if (!mask.classList.contains('show')) return;
+        if (event.key === 'Escape') DetailModal.close();
+        if (event.key !== 'Tab') return;
+        var items = mask.querySelectorAll('button, a[href]');
+        var first = items[0], last = items[items.length-1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    /* ================================================================
+       功能层 Features
+       ================================================================ */
+    var Features = {
+      /* ---- 3D解读：热点标注 ---- */
+      Interpretation: {
+        dots: [],
+        build: function (relic) {
+          $('hotspotCard').classList.remove('show');
+          var layer = $('hotspotLayer');
+          layer.innerHTML = '';
+          this.dots = [];
+          (relic.hotspots || []).forEach(function (hs, index) {
+            var d = document.createElement('button');
+            d.className = 'hotspot';
+            d.textContent = hs.label;
+            d.dataset.number = String(index+1).padStart(2,'0');
+            d.setAttribute('aria-label', '解读：' + hs.title);
+            d.addEventListener('click', function () {
+              if (MaskStudy.active()) { MaskStudy.select(index); return; }
+              $('hotspotTitle').textContent = hs.title;
+              $('hotspotText').textContent = hs.text;
+              $('hotspotCard').classList.add('show');
+            });
+            layer.appendChild(d);
+            this.dots.push({ el: d, hs: hs });
+          }, this);
+        },
+        setVisible: function (on) {
+          this.dots.forEach(function (d) { if (!on) d.el.classList.remove('show'); d.el.dataset.enabled = on ? '1' : ''; });
+          if (!on) $('hotspotCard').classList.remove('show');
+        },
+        updateHotspots: function (camera, model) {
+          if (!model || !this.dots.length) return;
+          var on = Store.get().mode === 'interpretation';
+          var viewer = $('viewer');
+          var w = viewer.clientWidth, h = viewer.clientHeight;
+          var study = MaskStudy.active();
+          var exact = study || Boolean(this.dots[0].hs.local);
+          var visible = on && exact ? studyVisibility(model,camera) : null;
+          this.dots.forEach(function (d, index) {
+            if (!on) { d.el.classList.remove('show'); return; }
+            var anchor = study ? model.studyAnchors[index] : model.anchors[index];
+            if (!anchor || (visible && !visible[index])) { d.el.classList.remove('show'); return; }
+            var v = model.group.localToWorld(anchor.clone());
+            var n = new THREE.Vector3(0, 0, 1).transformDirection(model.group.matrixWorld);
+            var toCam = camera.position.clone().sub(v).normalize();
+            var facing = n.dot(toCam);
+            var p = v.clone().project(camera);
+            if (facing < (MaskStudy.active() ? 0.48 : 0.12) || Math.abs(p.x) > 1 || Math.abs(p.y) > 1 || p.z > 1) { d.el.classList.remove('show'); return; }
+            d.el.classList.add('show');
+            d.el.style.left = ((p.x * 0.5 + 0.5) * w) + 'px';
+            d.el.style.top = ((-p.y * 0.5 + 0.5) * h) + 'px';
+          });
+        }
+      },
+
+      /* ---- 历史背景：时间线 ---- */
+      History: {
+        render: function (relic) {
+          var tl = $('timeline');
+          tl.innerHTML = '';
+          var discovery = DataService.fieldMeta(relic, 'discovery');
+          var background = DataService.fieldMeta(relic, 'background');
+          tl.innerHTML = '<div class="tl-item"><div class="tl-year">' + relic.culture.year +
+            '</div><h4>考古发现 · 类型参照</h4><p>' + discovery.value +
+            '</p></div><div class="tl-item"><h4>历史背景</h4><p>' + background.value +
+            '</p></div><div class="tl-item">' +
+            sourceLinks([...new Set(discovery.refs.concat(background.refs))]) + '</div>';
+        }
+      },
+
+      /* ---- 文化解读 ---- */
+      Culture: {
+        render: function (relic) {
+          var items = DataService.all();
+          var index = items.findIndex(function (item) { return item.id === relic.id; });
+          var number = String(index + 1).padStart(2, '0');
+          var name = DataService.field(relic, 'name');
+          var picker = $('folioSelect');
+          if (!picker.options.length) items.forEach(function (item) {
+            picker.add(new Option(DataService.field(item, 'name'), item.id));
+          });
+          picker.value = relic.id;
+          $('folioName').textContent = name;
+          $('folioEnglish').textContent = hallExhibits[relic.id].english;
+          $('folioLead').textContent = DataService.field(relic, 'intro');
+          $('folioImage').src = 'assets/relics/' + THUMBNAILS[relic.id];
+          $('folioImage').alt = name + '艺术化示意图';
+          $('folioEntries').innerHTML = Object.entries(DataService.topics).map(function (entry) {
+            var key = entry[0];
+            var meta = DataService.fieldMeta(relic, key);
+            var year = key === 'discovery' ? '<time>' + relic.culture.year + '</time>' : '<span></span>';
+            return '<li>' + year + '<div><h3>' + entry[1] + '</h3><p>' +
+              DataService.status(meta) + ' · ' + meta.value + '</p>' +
+              (meta.refs ? '<p class="folio-sources">' + sourceLinks(meta.refs) + '</p>' : '') + '</div></li>';
+          }).join('');
+          $('folioFields').innerHTML = '<dt>项目展品</dt><dd>' + number + ' / ' + name + '</dd>' +
+            Object.entries(DataService.archive).map(function (entry) {
+              return '<dt>' + entry[1] + '</dt><dd>' + DataService.field(relic, entry[0]) + '</dd>';
+            }).join('');
+          $('folioNote').textContent = DataService.pendingReason + ' 图版为项目艺术化示意图。';
+          $('folioSources').innerHTML = '简介与类型档案来源<br>' +
+            sourceLinks(DataService.fieldMeta(relic, 'reference').refs);
+          $('folioPlateLabel').textContent = '图版 ' + number + '　' + name;
+          $('culturePanel').scrollTop = 0;
+        }
+      }
+    };
+
+    /* ================================================================
+       页面 / 模式联动渲染
+       ================================================================ */
+    function modelVisible(state) {
+      return state.page !== 'culture' && state.mode !== 'experience';
+    }
+
+    var lastLayout = 'explore';
+    var interpretSpin = false;
+    var previousMode, previousPage, previousRelic;
+    function applyState() {
+      var s = Store.get();
+      renderTopNav();
+      renderBottomNav();
+      document.body.className = 'page-' + s.page + ' mode-' + s.mode;
+      /* 功能面板显隐：文化面板只在文化解读页出现；切到历史/互动模式时
+         由对应面板占据独立面板列，避免两个面板同时争抢同一区域 */
+      var cultureVisible = s.page === 'culture' && s.mode !== 'history' && s.mode !== 'experience';
+      $('historyPanel').classList.toggle('show', s.mode === 'history');
+      var tracing = s.mode === 'experience';
+      $('tracePanel').classList.toggle('show', tracing);
+      if (tracing) Observation.open(s.relicId);
+      $('culturePanel').classList.toggle('show', cultureVisible);
+      /* 布局形态：决定主网格的区域划分（见 CSS 中 body[data-layout] 规则）。
+         每次切换都重新计算，不沿用其他页面的布局状态。 */
+      var layout = 'explore';
+      if (s.mode === 'history' || tracing) layout = 'panel';
+      else if (s.page === 'immersive') layout = 'immersive';
+      else if (cultureVisible) layout = 'culture';
+
+      document.body.dataset.layout = layout;
+      var hall = layout === 'immersive' && desktopExhibit.matches;
+      document.body.dataset.hall = hall ? 'entity' : '';
+      document.body.dataset.hallItem=hall ? s.relicId : '';
+      if (layout === 'immersive') {
+        var items=DataService.all();
+        var exhibit=hallExhibits[s.relicId], relic=DataService.get(s.relicId);
+        var number=items.indexOf(relic)+1;
+        $('hallNumber').textContent=String(number).padStart(2,'0');
+        $('hallIndex').setAttribute('aria-label','第 '+number+' 件，共 '+items.length+' 件');
+        $('hallTitle').textContent=DataService.field(relic,'name');
+        $('hallEnglish').textContent=exhibit.english;
+        $('hallCopy').textContent=exhibit.copy;
+        $('hallPrev').disabled=s.relicId===items[0].id;
+        $('hallNext').disabled=s.relicId===items[items.length-1].id;
+        $('hallSolid').setAttribute('aria-pressed',String(s.immersiveMode==='solid'));
+        var cloudEnabled = hall && SceneManager.available() && typeof ExhibitPointCloud !== 'undefined';
+        $('hallCloud').disabled = !cloudEnabled;
+        $('hallCloud').title = cloudEnabled ? '文物表面点云' : '点云展示需要支持 WebGL 的桌面展厅';
+        $('hallCloud').setAttribute('aria-pressed',String(s.immersiveMode==='cloud'));
+      }
+      MaskStudy.sync(s); HistoryDesk.sync(s);
+      SceneManager.setExplorePresentation(s.page === 'explore' || s.page === 'interactive3d' || s.mode === 'history');
+      SceneManager.syncExhibitCloud();
+      if (layout !== lastLayout) {
+        SceneManager.frameForLayout(layout);
+        lastLayout = layout;
+      }
+      /* 布局变化后下一帧重算画布尺寸（ResizeObserver 也会兜底触发） */
+      requestAnimationFrame(function () { SceneManager.handleResize(); });
+      var interp = s.mode === 'interpretation';
+      Features.Interpretation.setVisible(interp);
+      /* 自动旋转与按钮态：解读模式下暂停旋转，方便点选热点（用户偏好不变，退出即恢复） */
+      if (s.mode !== previousMode || s.page !== previousPage || s.relicId !== previousRelic) {
+        interpretSpin = false;
+        previousMode = s.mode;
+        previousPage = s.page;
+        previousRelic = s.relicId;
+      }
+      var spinning = MaskStudy.active() ? MaskStudy.spinning() : (interp ? interpretSpin : s.autoRotate);
+      SceneManager.setAutoRotate(spinning);
+      $('btnRotate').classList.toggle('on', spinning);
+      $('btnRotate').setAttribute('aria-pressed',String(spinning));
+    }
+    var lastRelicId = Store.get().relicId;
+    Store.on(function (s) {
+      if (modelVisible(s) && s.relicId !== lastRelicId) {
+        lastRelicId = s.relicId;
+        SceneManager.showRelic(DataService.get(s.relicId));
+      }
+      applyState();
+    });
+
+    function renderAll() {
+      var relic = DataService.get(Store.get().relicId);
+      renderRelicList($('searchInput').value);
+      renderInfoPanel();
+      $('immersiveCaption').textContent = ['name', 'era', 'siteShort'].map(function (key) {
+        return DataService.field(relic, key);
+      }).filter(Boolean).join(' · ');
+      Features.Interpretation.build(relic);
+      Features.History.render(relic);
+
+      Features.Culture.render(relic);
+      applyState();
+    }
+
+    /* ================================================================
+       事件绑定（Viewer3D 工具按钮 / TopBar 工具）
+       ================================================================ */
+    function bindEvents() {
+      MaskStudy.bind(); Observation.bind(); HistoryDesk.bind();
+      desktopExhibit.addEventListener('change', function () {
+        if (!desktopExhibit.matches && Store.get().immersiveMode === 'cloud') Store.setImmersiveMode('solid');
+        else applyState();
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden || !modelVisible(Store.get())) SceneManager.pause();
+        else SceneManager.resume();
+      });
+      $('folioSelect').addEventListener('change', function () {
+        Store.set({relicId: this.value});
+        renderAll();
+      });
+      function turnExhibit(step) {
+        var items=DataService.all();
+        var i=items.findIndex(function(item){return item.id===Store.get().relicId;});
+        if (items[i+step]) { Store.set({relicId:items[i+step].id,immersiveMode:'solid'}); renderAll(); }
+      }
+      $('hallPrev').addEventListener('click',function(){turnExhibit(-1);});
+      $('hallNext').addEventListener('click',function(){turnExhibit(1);});
+      $('hallSolid').addEventListener('click',function(){Store.setImmersiveMode('solid');});
+      $('hallCloud').addEventListener('click',function(){
+        if (Store.get().immersiveMode === 'solid') $('hallCloudStatus').hidden = true;
+        Store.setImmersiveMode('cloud');
+      });
+      $('btnRotate').addEventListener('click', function () {
+        if (MaskStudy.active()) { MaskStudy.toggleSpin(); applyState(); return; }
+        if (Store.get().mode === 'interpretation') { interpretSpin = !interpretSpin; applyState(); return; }
+        Store.set({ autoRotate: !Store.get().autoRotate });
+      });
+      $('btnZoomIn').addEventListener('click', function () { SceneManager.zoomBy(0.78); });
+      $('btnZoomOut').addEventListener('click', function () { SceneManager.zoomBy(1.28); });
+      $('btnFs').addEventListener('click', toggleFullscreen);
+      $('fsBtnTop').addEventListener('click', toggleFullscreen);
+      $('vrBtn').addEventListener('click', function () { toast('VR 模式待接入'); });
+      var input=$('searchInput'), results=$('hallSearch');
+      function showSearch() {
+        var q=input.value.trim();
+        results.hidden=(Store.get().page!=='immersive' && Store.get().page!=='culture' && !MaskStudy.active() && Store.get().mode !== 'experience' && !document.body.hasAttribute('data-history-desk')) || !q;
+        results.replaceChildren();
+        if(results.hidden) return;
+        DataService.all().forEach(function(relic){
+          var name=DataService.field(relic,'name');
+          if(!name.includes(q)) return;
+          var choice=document.createElement('button');choice.textContent=name;
+          choice.onclick=function(){input.value='';results.hidden=true;Store.set({relicId:relic.id,immersiveMode:'solid'});renderAll();input.focus();};
+          results.appendChild(choice);
+        });
+        if(!results.childElementCount) results.textContent='没有匹配的文物';
+      }
+      input.addEventListener('input',function(){renderRelicList(input.value);showSearch();});
+      input.addEventListener('focus',showSearch);
+      document.addEventListener('focusin',function(e){if(e.target!==input && !results.contains(e.target))results.hidden=true;});
+      document.addEventListener('pointerdown',function(e){if(e.target!==input && !results.contains(e.target))results.hidden=true;});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape' && !results.hidden){input.focus();results.hidden=true;}});
+      $('hotspotClose').addEventListener('click', function () { $('hotspotCard').classList.remove('show'); });
+      $('modalClose').addEventListener('click', DetailModal.close);
+      $('modalMask').addEventListener('click', function (e) { if (e.target === this) DetailModal.close(); });
+      document.querySelectorAll('[data-close-panel]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (Store.get().page === 'culture') Store.setPage('explore');
+          else Store.setMode('display');
+        });
+      });
+      document.addEventListener('keydown', DetailModal.handleKey);
+    }
+
+    /* ================================================================
+       启动
+       ================================================================ */
+    (function boot() {
+      var relic = DataService.get('bronze-mask');
+      bindEvents();
+      renderAll();
+      var ok = SceneManager.init();
+      if (ok) SceneManager.showRelic(relic);
+      PerformanceGuard.init(function (/* fps */) { /* 性能守护在后台运行，状态不单独展示 */ });
+      applyState();
+      if (!ok) {
+        ['btnRotate','btnZoomIn','btnZoomOut','resetExhibit'].forEach(function (id) { $(id).disabled = true; });
+      }
+    })();
+    </script>
+</body>
+</html>

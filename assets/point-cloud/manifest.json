@@ -1,0 +1,90 @@
+{
+  "bronze-mask": {
+    "triangles": 599172,
+    "count": 64000,
+    "drawCount": 60000,
+    "bytes": 1152040,
+    "sourceSha256": "c3b18e523c3ff62bb2e954bdaaab963338846310fa4de34bc0731b125104aa0c",
+    "pointSha256": "2a5cfe9bede4f71d66031bd25c29b3c002e3bb62949989d775404f7b6b0b76db",
+    "axis": 0,
+    "start": -0.951952,
+    "span": 1.902998
+  },
+  "bronze-tree": {
+    "triangles": 699932,
+    "count": 88000,
+    "drawCount": 84000,
+    "bytes": 1584040,
+    "sourceSha256": "73790a3bb70630263bd09fbbee8ea49bd10afab0cdcc33161f0a488d75212e71",
+    "pointSha256": "f9941a37f766ad7d35adacd8dfa53c8473657fec0fd3f111c2463fdc4dc05beb",
+    "axis": 0,
+    "start": -0.3110649883747101,
+    "span": 0.6302639842033386
+  },
+  "bronze-standing": {
+    "triangles": 558120,
+    "count": 72000,
+    "drawCount": 68000,
+    "bytes": 1296040,
+    "sourceSha256": "347677db14ce1061f8a310a9b4422cedd6fc59e9d3a35c1e31248af2b65342b0",
+    "pointSha256": "c451941623d17485d15b2caaaea05b014b1e5776dd4572d67e809417f72380c1",
+    "axis": 0,
+    "start": -0.2904079854488373,
+    "span": 0.5800019800662994
+  },
+  "bronze-zongmu": {
+    "triangles": 533528,
+    "count": 84000,
+    "drawCount": 80000,
+    "bytes": 1512040,
+    "sourceSha256": "8c324c3af328ead72dfeaa9c26e44d494955b33933081874c89dd8467d31cca4",
+    "pointSha256": "1533383043db0c59106c070542eadb910780b84fb7e3b382f32037b284b14e32",
+    "axis": 0,
+    "start": -0.9519690275192261,
+    "span": 1.9030050039291382
+  },
+  "gold-mask": {
+    "triangles": 309086,
+    "count": 66000,
+    "drawCount": 62000,
+    "bytes": 1188040,
+    "sourceSha256": "dffa2915168e167f2a72581012fe7f0d7aa01c96b4b49354c481e25b9d54a218",
+    "pointSha256": "8213cd4b04c7a304db5e644519829a57e325658d1de401b915cbcaa13d539159",
+    "axis": 0,
+    "start": -0.9520279765129089,
+    "span": 1.9029369950294495
+  },
+  "bronze-head": {
+    "triangles": 352222,
+    "count": 74000,
+    "drawCount": 70000,
+    "bytes": 1332040,
+    "sourceSha256": "2eb5534a41eff72d908c3333468d1c60eeeabdf8c9110324cd74b77159a6c17f",
+    "pointSha256": "0c06873fda79ad579ff4ab7876cc6d078a9be63edaf6831df1e8bfde690c1fd2",
+    "axis": 0,
+    "start": -0.9516559839248657,
+    "span": 1.901358962059021
+  },
+  "bronze-bird-bell": {
+    "triangles": 344408,
+    "count": 76000,
+    "drawCount": 72000,
+    "bytes": 1368040,
+    "sourceSha256": "ee54fc89724da17d8c15c150c917d1c085b92a6de27d4974b0cb341815ef7b65",
+    "pointSha256": "9cc77ec76feb84efb902b06b69012259da382dfea29fb5aadf89106325c16777",
+    "axis": 2,
+    "start": -0.8427640199661255,
+    "span": 1.682873010635376
+  },
+  "jade-zhang": {
+    "triangles": 106744,
+    "count": 72000,
+    "drawCount": 68000,
+    "bytes": 1296040,
+    "sourceSha256": "34289583900ae4145c090271957e74ba4a62199150ee73962d383929a7f91784",
+    "pointSha256": "0a0d7084351a389b4d8cf56889543259159f594e6bd3d70354a87272b99e9884",
+    "axis": 0,
+    "start": -0.26061099767684937,
+    "span": 0.5205639898777008
+  }
+}

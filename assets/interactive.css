@@ -1,0 +1,53 @@
+.workbench-heading,.study-guide{display:none}
+@media(min-width:961px) and (hover:hover) and (pointer:fine){
+ body[data-study="yes"]{background:#0a201e url("backgrounds/interactive.png") center/cover fixed no-repeat}
+ body[data-study="yes"] .bg-pattern{display:none}
+ body[data-study="yes"] main{padding:clamp(14px,2vw,36px);gap:clamp(18px,2.2vw,36px);grid-template-columns:minmax(0,1fr) clamp(285px,26vw,400px);grid-template-areas:"viewer guide"}
+ body[data-study="yes"] :is(.info-panel,.relic-panel,.viewer-hint,.hotspot-card,.hotspot-note){display:none}
+ body[data-study="yes"] .viewer{border:0;border-radius:0;background:none;overflow:hidden}
+ .page-interactive3d .topbar{position:relative;z-index:12}
+ .page-interactive3d .top-tools{position:relative}
+ body[data-study="yes"] .workbench-heading{display:block;position:absolute;pointer-events:none;left:2%;top:2%;z-index:2;text-shadow:0 2px 12px #031813}
+ .workbench-heading small,.study-guide small{font:11px/1.6 Georgia,serif;letter-spacing:.18em;color:#d7c193}
+ .workbench-heading h1{font:500 clamp(32px,3.5vw,60px)/1.35 var(--serif);letter-spacing:.12em;color:#f1e8cf;margin:5px 0}
+ .workbench-heading p{margin:0;color:#c1cabd;font-size:12px;letter-spacing:.1em}
+ body[data-study="yes"] .viewer-tools{left:50%;top:auto;bottom:1%;transform:translateX(-50%);flex-direction:row;gap:2px;padding:5px;border:1px solid #645f45;border-radius:6px;background:#091b19eb}
+ body[data-study="yes"] .vtool{background:transparent;border:0;border-radius:3px;box-shadow:none;color:#dbd0b3;min-width:48px;height:43px}
+ body[data-study="yes"] .vtool:is(:hover,.on){background:#354138;color:#ffe6a5}
+ body[data-study="yes"] .hotspot{width:26px;height:26px;min-height:26px;margin:-13px 0 0 -13px;background:#102924e8;color:#f4deaa;font:13px Georgia,serif;border:1px solid #d4be86;animation:none;box-shadow:0 1px 4px #061612}
+ body[data-study="yes"] .hotspot[aria-pressed="true"]{background:#e3c991;color:#172622}
+ body[data-study="yes"] .study-guide{display:block;grid-area:guide;align-self:center;max-height:100%;overflow:auto;padding:clamp(19px,2vw,34px);background:linear-gradient(150deg,#1f3631f0,#0b1b19f5 70%);border:1px solid #746a4e;border-top:2px solid #b9a370;box-shadow:0 18px 55px #02120d38;scrollbar-color:#766e53 transparent}
+ .study-guide h2{font:500 27px/1.45 var(--serif);color:#f2e6c9;margin:5px 0 12px;letter-spacing:.1em}
+ .study-guide p{color:#d2d6c9;font-size:14px;line-height:1.8;margin:9px 0 16px}
+ .study-guide button,.study-guide select{font:inherit;color:#e4d6b6}
+ #studyIndex{display:grid}
+ #studyIndex button{display:flex;gap:13px;align-items:center;width:100%;text-align:left;border:none;border-top:1px solid #4c5748;background:transparent;padding:9px 5px;font:16px var(--serif)}
+ #studyIndex button span{font:italic 15px Georgia,serif;color:#b9a774}
+ #studyIndex button::after{content:"›";margin-left:auto;color:#b6ac8e}
+ #studyIndex button:is(:hover,[aria-pressed="true"]){background:#31463c;color:#ffe4a6}
+ .study-guide label{display:flex;align-items:center;gap:10px;font-size:12px;color:#b2bcac;border-top:1px solid #635f47;padding-top:14px;margin-top:14px}
+ .study-guide select{border:1px solid #746b4e;background:#112723;padding:5px}
+ #studyDetail{border-left:2px solid #ae965d;padding-left:12px;margin-top:12px}
+ #studyDetail h3{font:19px var(--serif);color:#ecd6a4;margin:4px 0}
+ #studyDetail button{float:right;background:transparent;border:0;font-size:18px}
+}
+body[data-study="yes"] .hotspot{font-size:0}
+body[data-study="yes"] .hotspot::after{content:attr(data-number);font:13px Georgia,serif}
+/* 解读展开时维持目录起点，窄高桌面在栏内滚动。 */
+body[data-study="yes"] .study-guide{align-self:start;margin-top:min(4vh,32px);max-height:calc(100% - min(4vh,32px))}
+@media(min-width:961px) and (hover:hover) and (pointer:fine) {
+  body[data-study="yes"] .study-guide {
+    background:linear-gradient(135deg,#1c322ff7,#101f20f7);
+    border:1px solid #8d805f80;border-top:2px solid #bea578;
+    margin-top:clamp(6px,1.8vh,18px);max-height:calc(100% - clamp(6px,1.8vh,18px));
+    padding:clamp(17px,1.65vw,28px);
+  }
+  #studyIndex button {padding:10px 12px;border-top-color:#66725e66}
+  #studyIndex button[aria-pressed="true"] {background:#32473d;box-shadow:inset 2px 0 #d4bb87}
+  #studyDetail {margin-top:10px;padding:9px 12px 1px;background:#091c1bae}
+  body[data-study="yes"] .hotspot {
+    width:30px;height:30px;margin:-15px 0 0 -15px;
+    border:1px solid #ebd5a2;box-shadow:0 0 0 3px #0c1d1a72,0 2px 4px #071611;
+  }
+  body[data-study="yes"] .hotspot[aria-pressed="true"] {color:#172822;background:#f4dca8}
+}

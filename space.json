@@ -1,0 +1,8 @@
+{
+  "runtime": "static",
+  "platformVersion": 15,
+  "entry": "index.html",
+  "name": "三星堆数字博物馆",
+  "slug": "san-xing-dui-shu-zi-bo-wu-guan",
+  "managedCronJobs": []
+}
